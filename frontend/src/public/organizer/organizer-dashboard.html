@@ -11,12 +11,14 @@
     <div class="organizer-dashboard">
         <header class="dashboard-header">
             <div class="header-content">
+                <button class="org-menu-toggle" id="orgMenuToggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
                 <h1>🎯 Organizer Dashboard</h1>
                 <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
             </div>
         </header>
 
-        <div class="dashboard-sidebar">
+    <div class="org-overlay" id="orgOverlay"></div>
+    <div class="dashboard-sidebar" id="orgSidebar">
             <nav class="sidebar-nav">
                 <div class="nav-item active" onclick="showSection('events')">📊 Events</div>
                 <div class="nav-item" onclick="window.location.href='analytics.html'">📈 Analytics</div>

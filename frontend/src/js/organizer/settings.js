@@ -22,4 +22,5 @@
   window.logout = logout;
   window.goDashboard = goDashboard;
   window.saveSettings = saveSettings;
+
 })();

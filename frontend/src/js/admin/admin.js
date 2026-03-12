@@ -672,6 +672,35 @@
       });
       state.modalSaveHandler(values);
     });
+
+    // Mobile hamburger menu setup
+    const adminMenuToggle = byId('adminMenuToggle');
+    const adminOverlay = byId('adminOverlay');
+    const adminSidebar = document.querySelector('.admin-sidebar');
+
+    if (adminMenuToggle && adminOverlay && adminSidebar) {
+      adminMenuToggle.addEventListener('click', function () {
+        adminSidebar.classList.toggle('mobile-open');
+        adminMenuToggle.classList.toggle('active');
+        adminOverlay.classList.toggle('active');
+      });
+
+      adminOverlay.addEventListener('click', function () {
+        adminSidebar.classList.remove('mobile-open');
+        adminMenuToggle.classList.remove('active');
+        adminOverlay.classList.remove('active');
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!adminSidebar.contains(e.target) && !adminMenuToggle.contains(e.target)) {
+          if (adminSidebar.classList.contains('mobile-open')) {
+            adminSidebar.classList.remove('mobile-open');
+            adminMenuToggle.classList.remove('active');
+            adminOverlay.classList.remove('active');
+          }
+        }
+      });
+    }
   }
 
   async function init() {

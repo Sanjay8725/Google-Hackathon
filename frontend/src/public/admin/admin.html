@@ -25,6 +25,11 @@
 
         <main class="admin-main">
             <header class="admin-topbar">
+                <button class="admin-menu-toggle" id="adminMenuToggle" type="button" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div>
                     <h1>Admin Portal</h1>
                     <p id="topbarSubtext">Seamless event management and control center</p>
@@ -34,6 +39,7 @@
                     <button class="btn btn-danger" type="button" id="logoutButton">Logout</button>
                 </div>
             </header>
+            <div class="admin-overlay" id="adminOverlay"></div>
 
             <section id="dashboard-section" class="admin-section">
                 <div class="cards-grid">

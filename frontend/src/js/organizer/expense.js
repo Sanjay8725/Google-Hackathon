@@ -252,5 +252,23 @@
     }
 
     loadOrganizerEventsForExpenses();
+
+      // Mobile hamburger menu
+      const orgMenuToggle = document.getElementById('orgMenuToggle');
+      const orgOverlay = document.getElementById('orgOverlay');
+      const orgSidebar = document.getElementById('orgSidebar');
+      if (orgMenuToggle && orgOverlay && orgSidebar) {
+        orgMenuToggle.addEventListener('click', function () {
+          orgSidebar.classList.toggle('mobile-open');
+          orgMenuToggle.classList.toggle('active');
+          orgOverlay.classList.toggle('active');
+        });
+        orgOverlay.addEventListener('click', function () {
+          orgSidebar.classList.remove('mobile-open');
+          orgMenuToggle.classList.remove('active');
+          orgOverlay.classList.remove('active');
+        });
+      }
+
   });
 })();

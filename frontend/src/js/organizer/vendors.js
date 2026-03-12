@@ -17,4 +17,5 @@
 
   window.logout = logout;
   window.goDashboard = goDashboard;
+
 })();
