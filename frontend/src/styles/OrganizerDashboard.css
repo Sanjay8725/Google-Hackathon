@@ -1,7 +1,8 @@
 ﻿/* Organizer Dashboard */
 .organizer-dashboard {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
   background: linear-gradient(135deg, #EBF5FB 0%, #E8F8F5 50%, #F4ECF7 100%);
   color: #2D1B0B;
 }
@@ -103,8 +104,10 @@
   margin-left: 200px;
   margin-top: 70px;
   flex: 1;
+  min-width: 0;
   padding: 2rem;
   overflow-y: auto;
+  width: calc(100% - 200px);
   max-width: calc(100% - 200px);
   background: linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 100%);
 }
@@ -922,6 +925,26 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .organizer-dashboard {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .dashboard-header {
+    position: sticky;
+    padding: 0.9rem 1rem;
+  }
+
+  .header-content {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .logout-btn {
+    position: static;
+    margin-left: auto;
+  }
+
   .dashboard-sidebar {
     width: 100%;
     height: auto;
@@ -939,9 +962,15 @@
     overflow-x: auto;
   }
 
+  .nav-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   .dashboard-main {
     margin-left: 0;
-    margin-top: auto;
+    margin-top: 0;
+    width: 100%;
     max-width: 100%;
     padding: 1rem;
     background: linear-gradient(135deg, #F0F9F9 0%, #F5FBFA 100%);
