@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/AdminPortal.css">
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="brand">EventFlow Admin</div>
+            <button class="nav-link active" type="button" data-admin-section="dashboard">Dashboard</button>
+            <button class="nav-link" type="button" data-admin-section="organizers">Manage Organizers</button>
+            <button class="nav-link" type="button" data-admin-section="events">Manage Events</button>
+            <button class="nav-link" type="button" data-admin-section="users">Manage Users</button>
+            <button class="nav-link" type="button" data-admin-section="registrations">Registrations</button>
+            <button class="nav-link" type="button" data-admin-section="notifications">Notifications</button>
+            <button class="nav-link" type="button" data-admin-section="analytics">Analytics</button>
+            <button class="nav-link" type="button" data-admin-section="reports">Reports</button>
+            <button class="nav-link" type="button" data-admin-section="feedback">Feedback</button>
+            <button class="nav-link" type="button" data-admin-section="settings">Admin Settings</button>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div>
+                    <h1>Admin Portal</h1>
+                    <p id="topbarSubtext">Seamless event management and control center</p>
+                </div>
+                <div class="topbar-actions">
+                    <span id="currentAdminLabel" class="pill">Admin</span>
+                    <button class="btn btn-danger" type="button" id="logoutButton">Logout</button>
+                </div>
+            </header>
+
+            <section id="dashboard-section" class="admin-section">
+                <div class="cards-grid">
+                    <article class="metric-card"><h3>Total Events</h3><p id="totalEventsValue">0</p></article>
+                    <article class="metric-card"><h3>Total Organizers</h3><p id="totalOrganizersValue">0</p></article>
+                    <article class="metric-card"><h3>Total Attendees</h3><p id="totalAttendeesValue">0</p></article>
+                    <article class="metric-card"><h3>Total Registrations</h3><p id="totalRegistrationsValue">0</p></article>
+                </div>
+
+                <div class="panel-grid two-col">
+                    <article class="panel">
+                        <h2>Recent Events</h2>
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead><tr><th>Event</th><th>Status</th><th>Date</th><th>Organizer</th></tr></thead>
+                                <tbody id="recentEventsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                    <article class="panel">
+                        <h2>Latest Registrations</h2>
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead><tr><th>Attendee</th><th>Event</th><th>Date</th></tr></thead>
+                                <tbody id="latestRegistrationsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="panel-grid two-col">
+                    <article class="panel">
+                        <h2>Event Trend</h2>
+                        <canvas id="dashboardTrendChart" height="180"></canvas>
+                    </article>
+                    <article class="panel">
+                        <h2>Registrations vs Attendance</h2>
+                        <canvas id="dashboardAttendanceChart" height="180"></canvas>
+                    </article>
+                </div>
+            </section>
+
+            <section id="organizers-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Manage Organizers</h2>
+                    <div class="toolbar">
+                        <input id="organizerSearch" class="input" placeholder="Search organizer or org name">
+                        <select id="organizerStatusFilter" class="input" title="Filter organizer status">
+                            <option value="">All statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="verified">Verified</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                        <button class="btn btn-primary" id="refreshOrganizersButton" type="button">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Name</th><th>Email</th><th>Organization</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="organizersTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="events-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Manage Events</h2>
+                    <div class="toolbar">
+                        <input id="eventSearch" class="input" placeholder="Search events">
+                        <select id="statusFilter" class="input" title="Filter event status">
+                            <option value="">All statuses</option>
+                            <option value="Planning">Planning</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Live">Live</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <button class="btn btn-primary" id="searchEventsButton" type="button">Search</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Title</th><th>Status</th><th>Date</th><th>Organizer</th><th>Actions</th></tr></thead>
+                            <tbody id="eventsTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="users-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Manage Users</h2>
+                    <div class="toolbar">
+                        <input id="userSearch" class="input" placeholder="Search attendees/users">
+                        <select id="roleFilter" class="input" title="Filter user role">
+                            <option value="">All roles</option>
+                            <option value="attendee">Attendee</option>
+                            <option value="organizer">Organizer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button class="btn btn-primary" id="searchUsersButton" type="button">Search</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Actions</th></tr></thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="registrations-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Registration Management</h2>
+                    <div class="toolbar">
+                        <select id="registrationEventFilter" class="input" title="Filter registrations by event"></select>
+                        <input id="registrationSearch" class="input" placeholder="Search attendee or event">
+                        <button class="btn btn-primary" id="loadRegistrationsButton" type="button">Load</button>
+                        <button class="btn btn-secondary" id="exportRegistrationsButton" type="button">Export CSV</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Event</th><th>Attendee</th><th>Email</th><th>Ticket</th><th>Date</th></tr></thead>
+                            <tbody id="registrationsTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="notifications-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Send Notifications</h2>
+                    <form id="announcementForm" class="stack-form">
+                        <input id="announcementTitle" class="input" placeholder="Announcement title" required>
+                        <textarea id="announcementMessage" class="input" rows="4" placeholder="Write message for organizers and attendees" required></textarea>
+                        <select id="announcementTarget" class="input" title="Target audience">
+                            <option value="all">All users</option>
+                            <option value="organizers">Organizers</option>
+                            <option value="attendees">Attendees</option>
+                        </select>
+                        <button class="btn btn-primary" type="submit">Send Announcement</button>
+                    </form>
+                    <div id="announcementStatus" class="status-text"></div>
+                </article>
+            </section>
+
+            <section id="analytics-section" class="admin-section is-hidden">
+                <div class="panel-grid two-col">
+                    <article class="panel">
+                        <h2>Registration Analytics</h2>
+                        <canvas id="analyticsRegistrationChart" height="200"></canvas>
+                    </article>
+                    <article class="panel">
+                        <h2>Category Distribution</h2>
+                        <canvas id="analyticsCategoryChart" height="200"></canvas>
+                    </article>
+                </div>
+                <article class="panel">
+                    <h2>Top Events</h2>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Event</th><th>Registered</th><th>Engagement</th><th>Avg Rating</th></tr></thead>
+                            <tbody id="analyticsTopEventsBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="reports-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Reports and Analytics</h2>
+                    <div class="toolbar">
+                        <select class="input" id="reportType" title="Report type">
+                            <option value="user-activity">User Activity</option>
+                            <option value="event-performance">Event Performance</option>
+                            <option value="revenue">Revenue</option>
+                        </select>
+                        <input type="date" id="reportStartDate" class="input" title="Report start date" placeholder="Start date">
+                        <input type="date" id="reportEndDate" class="input" title="Report end date" placeholder="End date">
+                        <button class="btn btn-primary" id="generateReportButton" type="button">Generate</button>
+                    </div>
+                    <pre id="reportResults" class="report-box">Report output will appear here.</pre>
+                </article>
+            </section>
+
+            <section id="feedback-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Feedback Management</h2>
+                    <div class="toolbar">
+                        <input id="feedbackSearch" class="input" placeholder="Search by attendee, event, or comment">
+                        <button class="btn btn-primary" id="loadFeedbackButton" type="button">Load Feedback</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Attendee</th><th>Event</th><th>Rating</th><th>Comment</th><th>Date</th></tr></thead>
+                            <tbody id="feedbackTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section id="settings-section" class="admin-section is-hidden">
+                <article class="panel">
+                    <h2>Admin Settings</h2>
+                    <div class="panel-grid two-col">
+                        <div class="stack-form">
+                            <label class="inline-check"><input type="checkbox" id="maintenanceMode"> Maintenance mode</label>
+                            <label class="inline-check"><input type="checkbox" id="registrationApprovalRequired"> Registration approval required</label>
+                            <label>Default timezone</label>
+                            <input id="defaultTimezone" class="input" placeholder="UTC">
+                        </div>
+                        <div class="stack-form">
+                            <label class="inline-check"><input type="checkbox" id="enforceStrongPasswords"> Enforce strong passwords</label>
+                            <label class="inline-check"><input type="checkbox" id="certificateTemplatesEnabled"> Enable educational certificate templates</label>
+                            <label>Max login attempts</label>
+                            <input type="number" id="maxLoginAttempts" class="input" min="1" value="5" title="Maximum login attempts" placeholder="5">
+                            <label>Session timeout (minutes)</label>
+                            <input type="number" id="sessionTimeoutMinutes" class="input" min="10" value="120" title="Session timeout minutes" placeholder="120">
+                        </div>
+                    </div>
+                    <div class="stack-form">
+                        <label>Event categories (comma separated)</label>
+                        <textarea id="eventCategories" class="input" rows="3" title="Event categories" placeholder="Technology, Networking, Workshop"></textarea>
+                    </div>
+                    <button class="btn btn-primary" type="button" id="saveSettingsButton">Save Settings</button>
+                    <div id="settingsStatus" class="status-text"></div>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <div id="editModal" class="modal is-hidden">
+        <div class="modal-card">
+            <h3 id="modalTitle">Edit</h3>
+            <form id="modalForm" class="stack-form"></form>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancelModalButton">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveModalButton">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/admin/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendors - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+    <style>
+        .filter-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 1.25rem 0 1.5rem;
+        }
+        .filter-section .filter-input,
+        .filter-section .filter-select {
+            min-height: 50px;
+            padding: 0 16px;
+        }
+        .filter-section .admin-nav-btn {
+            padding: 14px 32px;
+            font-size: 1rem;
+            border-radius: 10px;
+            font-weight: 700;
+            background: #FFF3E0;
+            color: #D2691E;
+            border: 2px solid #FF8C42;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-section .admin-nav-btn:hover {
+            background: #3498DB;
+            color: #ffffff;
+            border-color: #1ABC9C;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(52, 152, 219, 0.35);
+        }
+    </style>
+</head>
+<body>
+    <div class="organizer-dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>👥 Vendor Management</h1>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
+                <div class="nav-item" onclick="goDashboard('analytics')">📈 Analytics</div>
+                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
+                <div class="nav-item active">👥 Vendors</div>
+                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <section class="events-section">
+                <h2>Vendor Directory</h2>
+                <div class="filter-section">
+                    <input type="text" class="filter-input" placeholder="Search vendors...">
+                    <select class="filter-select" title="Filter vendors by category">
+                        <option value="">All Categories</option>
+                        <option value="catering">Catering</option>
+                        <option value="audio">Audio/Visual</option>
+                        <option value="venue">Venue</option>
+                        <option value="security">Security</option>
+                    </select>
+                    <button type="button" class="admin-nav-btn">Search</button>
+                </div>
+                <div class="empty-state">
+                    <div class="empty-state-icon">👥</div>
+                    <div class="empty-state-text">Vendor module is ready</div>
+                    <div class="empty-state-subtext">Add vendor data integration when available</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/organizer/organizer.js"></script>
+    <script src="../../js/organizer/vendors.js"></script>
+</body>
+</html>

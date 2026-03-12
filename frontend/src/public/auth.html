@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EventFlow</title>
+    <link rel="stylesheet" href="../styles/globals.css">
+    <link rel="stylesheet" href="../styles/AuthPage.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <button type="button" class="back-btn" onclick="goHome()">← Back</button>
+
+            <div class="auth-logo">🎯 EventFlow</div>
+
+            <div class="auth-toggle">
+                <button type="button" class="toggle-btn active" id="loginBtn" onclick="toggleAuth(true)">Login</button>
+                <button type="button" class="toggle-btn" id="signupBtn" onclick="toggleAuth(false)">Sign Up</button>
+            </div>
+
+            <div class="role-selection">
+                <p class="role-label">I am a:</p>
+                <div class="role-buttons">
+                    <button type="button" class="role-btn" id="adminRole" onclick="selectRole('admin')">🛡️ Admin</button>
+                    <button type="button" class="role-btn" id="organizerRole" onclick="selectRole('organizer')">🎪 Event Organizer</button>
+                    <button type="button" class="role-btn" id="attendeeRole" onclick="selectRole('attendee')">👤 Attendee</button>
+                </div>
+            </div>
+
+            <form class="auth-form" onsubmit="handleAuth(event)">
+                <div id="nameField" class="form-group hidden">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Your full name" id="authName" />
+                </div>
+
+                <div id="usernameField" class="form-group hidden">
+                    <label>Username</label>
+                    <input type="text" placeholder="Choose a username" id="authUsername" />
+                </div>
+
+                <div class="form-group">
+                    <label id="emailLabel">Email</label>
+                    <input type="text" placeholder="your@email.com" id="authEmail" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" placeholder="••••••••" id="authPassword" required />
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Login</button>
+            </form>
+
+            <div class="social-login">
+                <p>Or continue with</p>
+                <div class="social-buttons">
+                    <button type="button" class="social-btn">Google</button>
+                    <button type="button" class="social-btn">LinkedIn</button>
+                </div>
+            </div>
+
+            <p class="auth-footer">
+                <span id="toggleText">Don't have an account?</span>
+                <button type="button" class="link-btn" id="toggleLink" onclick="toggleAuth()">Sign up</button>
+            </p>
+
+            <div id="authMessage" class="auth-message hidden"></div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+</body>
+</html>

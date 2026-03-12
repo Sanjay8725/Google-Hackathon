@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizer Settings - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+</head>
+<body>
+    <div class="organizer-dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>⚙️ Organizer Settings</h1>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
+                <div class="nav-item" onclick="goDashboard('analytics')">📈 Analytics</div>
+                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
+                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
+                <div class="nav-item active">⚙️ Settings</div>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <section class="events-section">
+                <h2>Account Preferences</h2>
+                <div class="form-group form-group-constrained">
+                    <label>Display Name</label>
+                    <input type="text" class="filter-input" placeholder="Organizer name" id="displayName">
+                </div>
+                <div class="form-group form-group-constrained">
+                    <label>Notification Email</label>
+                    <input type="email" class="filter-input" placeholder="you@example.com" id="notificationEmail">
+                </div>
+                <div class="form-group form-group-constrained">
+                    <label>Timezone</label>
+                    <select class="filter-select" id="timezone" title="Select your timezone">
+                        <option value="UTC">UTC</option>
+                        <option value="Asia/Kolkata">Asia/Kolkata</option>
+                        <option value="America/New_York">America/New_York</option>
+                    </select>
+                </div>
+                <button type="button" class="action-btn primary" onclick="saveSettings()">Save Settings</button>
+            </section>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/organizer/organizer.js"></script>
+    <script src="../../js/organizer/settings.js"></script>
+</body>
+</html>

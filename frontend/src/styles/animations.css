@@ -1,0 +1,176 @@
+﻿/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes flowPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Apply animations */
+.flow-box {
+  animation: flowPulse 2s ease-in-out infinite;
+}
+
+.flow-box:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.flow-box:nth-child(5) {
+  animation-delay: 0.6s;
+}
+
+.stat-card {
+  animation: slideUp 0.6s ease-out;
+}
+
+.feature-card {
+  animation: slideUp 0.6s ease-out;
+}
+
+.feature-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.feature-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.event-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-overlay {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: scaleUp 0.3s ease-out;
+}
+
+.navbar {
+  animation: slideDown 0.5s ease-out;
+}
+
+.hero-title {
+  animation: slideUp 0.8s ease-out;
+}
+
+.hero-subtitle {
+  animation: slideUp 0.8s ease-out;
+  animation-delay: 0.1s;
+}
+
+.hero-animation {
+  animation: slideUp 0.8s ease-out;
+  animation-delay: 0.2s;
+}
+
+.hero-buttons {
+  animation: slideUp 0.8s ease-out;
+  animation-delay: 0.3s;
+}
+
+/* Hover Animations */
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(20, 184, 166, 0.35);
+  transition: all 0.3s ease;
+}
+
+.event-card:hover,
+.feature-card:hover,
+.feedback-card:hover,
+.cert-card:hover,
+.qr-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(20, 184, 166, 0.24);
+  transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+  background: rgba(20, 184, 166, 0.18);
+  border-color: rgba(20, 184, 166, 0.45);
+  transform: translateY(-3px);
+  transition: all 0.3s ease;
+}
+
+/* Loading Pulse */
+.loading {
+  animation: pulse 2s infinite;
+}
+
+/* Stagger Animation Helper */
+.stagger-item {
+  animation: slideUp 0.6s ease-out;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0s; }
+.stagger-item:nth-child(2) { animation-delay: 0.1s; }
+.stagger-item:nth-child(3) { animation-delay: 0.2s; }
+.stagger-item:nth-child(4) { animation-delay: 0.3s; }
+.stagger-item:nth-child(5) { animation-delay: 0.4s; }
+

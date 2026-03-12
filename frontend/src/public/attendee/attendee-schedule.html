@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Full Schedule - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/AttendeeDashboard.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #d70a0a;
+        }
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .schedule-header p {
+            color: #e5e7eb;
+            margin-top: 5px;
+        }
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+        }
+        .loading-container {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 40px;
+        }
+        .loading-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .loading-text {
+            color: #e5e7eb;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" onclick="goBack()">← Back to Dashboard</a>
+        <div class="schedule-header">
+            <div>
+                <h2>📅 View Full Schedule</h2>
+                <p>All events you registered for</p>
+            </div>
+            <div class="filter-buttons">
+                <button type="button" class="filter-btn active" onclick="filterSchedule('all')">All Events</button>
+                <button type="button" class="filter-btn" onclick="filterSchedule('Live')">Live</button>
+                <button type="button" class="filter-btn" onclick="filterSchedule('Upcoming')">Upcoming</button>
+                <button type="button" class="filter-btn" onclick="filterSchedule('Completed')">Completed</button>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div id="scheduleContent" class="schedule-grid">
+            <div class="loading-container">
+                <div class="loading-icon">⏳</div>
+                <p class="loading-text">Loading your schedule...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/attendee/schedule.js"></script>
+</body>
+</html>

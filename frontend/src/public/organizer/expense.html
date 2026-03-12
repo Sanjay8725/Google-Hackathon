@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+</head>
+<body>
+    <div class="organizer-dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>💸 Expense Tracker</h1>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
+                <div class="nav-item" onclick="window.location.href='analytics.html'">📈 Analytics</div>
+                <div class="nav-item active">💸 Expense Tracker</div>
+                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
+                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <section class="events-section">
+                <h2>Track Event Expenses</h2>
+                <article class="expense-tracker-card">
+                    <h3>Expense Ledger</h3>
+                    <div class="expense-toolbar">
+                        <div class="field">
+                            <label for="expenseEventId">Select Event</label>
+                            <select id="expenseEventId"></select>
+                        </div>
+                    </div>
+
+                    <div class="expense-summary" id="expenseSummary">
+                        <div class="summary-chip"><span>Total Expense</span><strong id="summaryTotalExpense">$0.00</strong></div>
+                        <div class="summary-chip"><span>Budget</span><strong id="summaryBudget">$0.00</strong></div>
+                        <div class="summary-chip"><span>Remaining</span><strong id="summaryRemaining">$0.00</strong></div>
+                        <div class="summary-chip"><span>Entries</span><strong id="summaryCount">0</strong></div>
+                    </div>
+
+                    <form id="expenseForm" class="expense-form">
+                        <div class="field">
+                            <label for="expenseTitle">Expense Title</label>
+                            <input id="expenseTitle" type="text" placeholder="Stage lighting" required />
+                        </div>
+                        <div class="field">
+                            <label for="expenseCategory">Category</label>
+                            <input id="expenseCategory" type="text" placeholder="Logistics" value="General" />
+                        </div>
+                        <div class="field">
+                            <label for="expenseAmount">Amount</label>
+                            <input id="expenseAmount" type="number" min="0" step="0.01" required />
+                        </div>
+                        <div class="field">
+                            <label for="expenseDate">Date</label>
+                            <input id="expenseDate" type="date" required />
+                        </div>
+                        <div class="field">
+                            <label for="expensePaymentMethod">Payment Method</label>
+                            <input id="expensePaymentMethod" type="text" placeholder="UPI / Card / Cash" value="Other" />
+                        </div>
+                        <div class="field field-wide">
+                            <label for="expenseNotes">Notes</label>
+                            <input id="expenseNotes" type="text" placeholder="Optional note" />
+                        </div>
+                        <button class="btn-register" type="submit">Add Expense</button>
+                    </form>
+
+                    <div id="expenseMessage" class="analytics-message" aria-live="polite"></div>
+
+                    <div class="expense-list" id="expenseList">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </article>
+            </section>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/organizer/expense.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizer Dashboard - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+</head>
+<body>
+    <div class="organizer-dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>🎯 Organizer Dashboard</h1>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showSection('events')">📊 Events</div>
+                <div class="nav-item" onclick="window.location.href='analytics.html'">📈 Analytics</div>
+                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
+                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
+                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <section class="quick-stats" id="quickStats">
+                <!-- Stats injected by JS -->
+            </section>
+
+            <section class="events-section" id="eventsSection">
+                <h2>📋 Your Events</h2>
+                <article class="event-register-card">
+                    <h3>Create Event</h3>
+                    <form id="createEventForm" class="event-register-form">
+                        <div class="field">
+                            <label for="newEventTitle">Event Title</label>
+                            <input id="newEventTitle" type="text" required />
+                        </div>
+                        <div class="field">
+                            <label for="newEventDate">Event Date</label>
+                            <input id="newEventDate" type="date" required />
+                        </div>
+                        <div class="field">
+                            <label for="newEventTime">Event Time</label>
+                            <input id="newEventTime" type="time" />
+                        </div>
+                        <div class="field">
+                            <label for="newEventLocation">Location</label>
+                            <input id="newEventLocation" type="text" required />
+                        </div>
+                        <div class="field">
+                            <label for="newEventCategory">Category</label>
+                            <select id="newEventCategory" required>
+                                <option value="">Select category</option>
+                                <option value="Cultural">Cultural</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Business">Business</option>
+                                <option value="Educational">Educational</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="newEventDescription">Description</label>
+                            <input id="newEventDescription" type="text" />
+                        </div>
+                        <button class="btn-register" type="submit">Create Event</button>
+                    </form>
+                </article>
+
+                <article class="event-register-card">
+                    <h3>Register Attendee to Event (registrations)</h3>
+                    <form id="eventRegisterForm" class="event-register-form">
+                        <div class="field">
+                            <label for="regEventId">Event ID</label>
+                            <input id="regEventId" type="name" required />
+                        </div>
+                        <div class="field">
+                            <label for="regUserId">User ID</label>
+                            <input id="regUserId" type="name" required />
+                        </div>
+                        <div class="field">
+                            <label for="regTicketType">Ticket Type</label>
+                            <input id="regTicketType" value="General" />
+                        </div>
+                        <button class="btn-register" type="submit">Register For Event</button>
+                    </form>
+                </article>
+
+                <div class="events-grid" id="eventsGrid">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </section>
+
+            <section class="realtime-section" id="analyticsSection" class="hidden">
+                <h2>🔴 Real-Time Event Tracking</h2>
+                <div class="realtime-grid" id="realtimeGrid">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/organizer/organizer.js"></script>
+</body>
+</html>

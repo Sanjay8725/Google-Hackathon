@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test - EventFlow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a0033 50%, #0f0f0f 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .test-section {
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-section h2 {
+            color: #6366f1;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .test-case {
+            background: rgba(99, 102, 241, 0.05);
+            border-left: 3px solid rgba(99, 102, 241, 0.3);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+        
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            color: #a7f3d0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        input {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        input::placeholder {
+            color: #6b7280;
+        }
+        
+        .status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #a7f3d0;
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        
+        select {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 EventFlow Authentication Test</h1>
+        
+        <div class="test-section">
+            <h2>1. API Health Check</h2>
+            <div class="test-case">
+                <button type="button" onclick="testHealth()">Test Server Connection</button>
+                <div id="healthResult" class="result"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Database Check</h2>
+            <div class="test-case">
+                <button type="button" onclick="testDatabase()">Check Database Users</button>
+                <div id="dbResult" class="result"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Login Test</h2>
+            <div class="test-case">
+                <div class="input-group">
+                    <label>Username/Email:</label><br>
+                    <input type="text" id="loginUsername" placeholder="admin" value="admin">
+                </div>
+                <div class="input-group">
+                    <label>Password:</label><br>
+                    <input type="password" id="loginPassword" placeholder="password" value="admin123">
+                </div>
+                <div class="input-group">
+                    <label>Role:</label><br>
+                    <select id="loginRole" title="Select user role for login">
+                        <option value="admin">Admin</option>
+                        <option value="organizer">Organizer</option>
+                        <option value="attendee">Attendee</option>
+                    </select>
+                </div>
+                <button type="button" onclick="testLogin()">Test Login</button>
+                <div id="loginResult" class="result"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Signup Test</h2>
+            <div class="test-case">
+                <div class="input-group">
+                    <label>Name:</label><br>
+                    <input type="text" id="signupName" placeholder="John Doe" value="Test User">
+                </div>
+                <div class="input-group">
+                    <label>Username:</label><br>
+                    <input type="text" id="signupUsername" placeholder="username" value="testuser">
+                </div>
+                <div class="input-group">
+                    <label>Email:</label><br>
+                    <input type="email" id="signupEmail" placeholder="test@example.com" value="test@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password:</label><br>
+                    <input type="password" id="signupPassword" placeholder="password" value="test12345">
+                </div>
+                <div class="input-group">
+                    <label>Role:</label><br>
+                    <select id="signupRole" title="Select user role for signup">
+                        <option value="admin">Admin</option>
+                        <option value="organizer">Organizer</option>
+                        <option value="attendee">Attendee</option>
+                    </select>
+                </div>
+                <button type="button" onclick="testSignup()">Test Signup</button>
+                <div id="signupResult" class="result"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Dashboard Redirect Test</h2>
+            <div class="test-case">
+                <button type="button" onclick="testRedirect('admin')">Redirect to Admin</button>
+                <button type="button" onclick="testRedirect('organizer')">Redirect to Organizer</button>
+                <button type="button" onclick="testRedirect('attendee')">Redirect to Attendee</button>
+                <div id="redirectResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(content, null, 2);
+            element.classList.add('show');
+            if (isError) {
+                element.classList.add('error');
+            } else {
+                element.classList.remove('error');
+            }
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                showResult('healthResult', { 
+                    status: '✅ Server is running!',
+                    port: 5000,
+                    data 
+                });
+            } catch (error) {
+                showResult('healthResult', { 
+                    error: error.message,
+                    hint: '❌ Backend server not running. Run: cd backend && npm start'
+                }, true);
+            }
+        }
+
+        async function testDatabase() {
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                if (response.ok) {
+                    showResult('dbResult', {
+                        message: 'Server is running. Run "node diagnose.js" in backend folder for full DB check.',
+                        hint: 'cd backend && node diagnose.js'
+                    });
+                }
+            } catch (error) {
+                showResult('dbResult', { error: error.message }, true);
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+
+            if (!username || !password) {
+                showResult('loginResult', { error: 'Please fill in all fields' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login/${role}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usernameOrEmail: username,
+                        password: password
+                    })
+                });
+                const data = await response.json();
+                showResult('loginResult', data, !data.success);
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, true);
+            }
+        }
+
+        async function testSignup() {
+            const name = document.getElementById('signupName').value;
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const role = document.getElementById('signupRole').value;
+
+            if (!name || !username || !email || !password) {
+                showResult('signupResult', { error: 'Please fill in all fields' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        username,
+                        email,
+                        password,
+                        role
+                    })
+                });
+                const data = await response.json();
+                showResult('signupResult', data, !data.success);
+            } catch (error) {
+                showResult('signupResult', { error: error.message }, true);
+            }
+        }
+
+        function testRedirect(role) {
+            const paths = {
+                admin: '/admin/admin.html',
+                organizer: '/organizer/organizer-dashboard.html',
+                attendee: '/attendee/attendee-dashboard.html'
+            };
+            
+            const path = paths[role];
+            showResult('redirectResult', {
+                role,
+                path,
+                message: `Redirecting to ${path}...`
+            });
+            
+            setTimeout(() => {
+                window.location.href = path;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

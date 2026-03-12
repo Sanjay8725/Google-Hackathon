@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Feedback - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/AttendeeDashboard.css">
+</head>
+<body class="feedback-page">
+    <div class="container">
+        <a class="back-link" onclick="goBack()">← Back to Dashboard</a>
+        <div class="feedback-section">
+            <div id="feedbackCard" class="feedback-card feedback-card-wide">
+                <h3 id="feedbackTitle">Share Your Feedback</h3>
+
+                <div id="eventPickerWrap" class="form-group is-hidden">
+                    <label for="eventPicker">Select Event</label>
+                    <select id="eventPicker"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="ratingRange">Rating</label>
+                    <input type="range" min="1" max="5" value="5" id="ratingRange" />
+                    <div id="ratingValue">5</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="commentText">Comments</label>
+                    <textarea id="commentText" rows="5" placeholder="What did you like? What can be improved?"></textarea>
+                </div>
+
+                <button class="action-btn primary" id="submitFeedbackBtn" type="button">Submit Feedback</button>
+            </div>
+
+            <div id="loadingView" class="loading is-hidden"><div class="spinner"></div></div>
+            <div id="emptyView" class="empty-state is-hidden"></div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/attendee/feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedule - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/AttendeeDashboard.css">
+    <link rel="stylesheet" href="../../styles/schedule.css">
+</head>
+<body class="schedule-page">
+    <div class="container">
+        <a class="back-link" onclick="goBack()">← Back to Dashboard</a>
+        <section class="schedule-hero">
+            <div class="schedule-header">
+                <div>
+                    <p class="schedule-kicker">Attendee Planner</p>
+                    <h2>📅 My Schedule</h2>
+                    <p class="schedule-subtitle">Track your registered events, review timings, and access QR passes, feedback, and event details from one place.</p>
+                </div>
+                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+
+            <div class="schedule-summary" id="scheduleSummary">
+                <div class="summary-card is-loading">
+                    <span class="summary-label">Loading schedule insights</span>
+                    <strong class="summary-value">...</strong>
+                </div>
+            </div>
+
+            <div class="schedule-controls">
+                <div class="search-group">
+                    <label class="control-label" for="scheduleSearch">Search Events</label>
+                    <input id="scheduleSearch" class="search-input" type="search" placeholder="Search by title, organizer, or location" />
+                </div>
+                <div class="sort-group">
+                    <label class="control-label" for="scheduleSort">Sort By</label>
+                    <select id="scheduleSort" class="sort-select">
+                        <option value="date-asc">Date: Earliest First</option>
+                        <option value="date-desc">Date: Latest First</option>
+                        <option value="title-asc">Title: A to Z</option>
+                        <option value="status">Status Priority</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button type="button" class="filter-btn active" data-filter="all" onclick="filterSchedule('all')">All Events</button>
+                <button type="button" class="filter-btn" data-filter="Live" onclick="filterSchedule('Live')">Live</button>
+                <button type="button" class="filter-btn" data-filter="Upcoming" onclick="filterSchedule('Upcoming')">Upcoming</button>
+                <button type="button" class="filter-btn" data-filter="Completed" onclick="filterSchedule('Completed')">Completed</button>
+            </div>
+        </section>
+
+        <div id="scheduleContent" class="schedule-grid">
+            <div class="schedule-loading">
+                <div class="schedule-loading-icon">⏳</div>
+                <p class="schedule-loading-text">Loading your schedule...</p>
+            </div>
+        </div>
+
+        <section class="schedule-extended" aria-label="Schedule Insights">
+            <article class="extended-card spotlight-card" id="nextEventSpotlight">
+                <p class="extended-kicker">Next Up</p>
+                <h3>Finding your next event...</h3>
+                <p class="extended-copy">We are analyzing your plan and preparing the next recommended event block.</p>
+            </article>
+
+            <article class="extended-card timeline-card">
+                <div class="extended-head">
+                    <p class="extended-kicker">Agenda Timeline</p>
+                    <h3>Upcoming Flow</h3>
+                </div>
+                <div id="agendaTimeline" class="agenda-timeline">
+                    <p class="agenda-empty">Timeline will appear when your schedule is loaded.</p>
+                </div>
+            </article>
+
+            <article class="extended-card prep-card">
+                <div class="extended-head">
+                    <p class="extended-kicker">Preparation</p>
+                    <h3>Before You Go</h3>
+                </div>
+                <ul class="prep-list" id="prepChecklist">
+                    <li>Keep your QR code ready before reaching the venue.</li>
+                    <li>Arrive 15 minutes early for smooth check-in.</li>
+                    <li>Review event notes and location details in advance.</li>
+                </ul>
+            </article>
+        </section>
+    </div>
+
+    <div id="eventModal" class="schedule-modal hidden" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+        <div class="schedule-modal-backdrop" onclick="closeEventModal()"></div>
+        <div class="schedule-modal-card">
+            <button type="button" class="schedule-modal-close" onclick="closeEventModal()">×</button>
+            <div id="eventModalBody"></div>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/attendee/schedule.js"></script>
+</body>
+</html>

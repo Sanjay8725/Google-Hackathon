@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizer Analytics - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+</head>
+<body>
+    <div class="organizer-dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>📈 Organizer Analytics</h1>
+                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+        </header>
+
+        <div class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
+                <div class="nav-item active">📈 Analytics</div>
+                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
+                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
+                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <section class="events-section">
+                <h2>Event Performance</h2>
+                <div class="analytics-tools-grid">
+                    <article class="analytics-card">
+                        <h3>Track Engagement (engagement_logs)</h3>
+                        <form id="engagementForm" class="analytics-form">
+                            <div class="field">
+                                <label for="engagementEventId">Event ID</label>
+                                <input id="engagementEventId" type="number" required />
+                            </div>
+                            <div class="field">
+                                <label for="engagementUserId">User ID</label>
+                                <input id="engagementUserId" type="number" required />
+                            </div>
+                            <div class="field">
+                                <label for="engagementAction">Action</label>
+                                <input id="engagementAction" placeholder="viewed_schedule" required />
+                            </div>
+                            <button class="btn-register" type="submit">Track Action</button>
+                        </form>
+                        <div id="engagementMessage" class="analytics-message" aria-live="polite"></div>
+                    </article>
+
+                    <article class="analytics-card">
+                        <h3>API Connection Check</h3>
+                        <div class="analytics-connection-row">
+                            <button id="checkConnectionBtn" class="btn-register" type="button">Check Analytics Connection</button>
+                        </div>
+                        <div id="connectionMessage" class="analytics-message" aria-live="polite"></div>
+                        <pre id="analyticsOutput" class="analytics-output">Run connection check to load organizer analytics data.</pre>
+                    </article>
+
+                    <article class="analytics-card">
+                        <h3>Read Data (events, analytics, feedback)</h3>
+                        <form id="queriesForm" class="analytics-form">
+                            <div class="field">
+                                <label for="queryEventId">Event ID for analytics</label>
+                                <input id="queryEventId" type="number" value="1" required />
+                            </div>
+                            <div class="field">
+                                <label for="queryOrganizerId">Organizer ID for dashboard</label>
+                                <input id="queryOrganizerId" type="number" required />
+                            </div>
+                            <div class="analytics-actions">
+                                <button class="btn-register" type="button" id="btnGetEvents">Get All Events</button>
+                                <button class="btn-register btn-secondary" type="button" id="btnGetFeedbackStats">Get Feedback Stats</button>
+                                <button class="btn-register btn-secondary" type="button" id="btnGetEventAnalytics">Get Event Analytics</button>
+                                <button class="btn-register btn-secondary" type="button" id="btnGetDashboardAnalytics">Get Organizer Analytics</button>
+                            </div>
+                        </form>
+                    </article>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/organizer/organizer.js"></script>
+    <script src="../../js/organizer/analytics.js"></script>
+</body>
+</html>
