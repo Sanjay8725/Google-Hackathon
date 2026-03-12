@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventFlow Admin Portal</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWix+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8LJQ4x1QxM7G6v5f5t0zE2A7r6Q3z0g=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <style>
+    :root {
+      --sidebar-width: 270px;
+      --topbar-height: 64px;
+      --bg-main: #f4f7fb;
+      --bg-sidebar: #ffffff;
+      --text-dark: #1f2a37;
+      --text-muted: #6b7280;
+      --border-soft: #e5e7eb;
+      --shadow-soft: 0 10px 30px rgba(31, 42, 55, 0.08);
+      --radius-card: 16px;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-dark);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .top-navbar {
+      height: var(--topbar-height);
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-soft);
+      box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+      z-index: 1040;
+    }
+
+    .brand-logo {
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: var(--topbar-height);
+      left: 0;
+      width: var(--sidebar-width);
+      height: calc(100vh - var(--topbar-height));
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-soft);
+      padding: 1rem 0.75rem;
+      transition: transform 0.28s ease;
+      z-index: 1030;
+      overflow-y: auto;
+    }
+
+    .sidebar .nav-link {
+      color: #374151;
+      font-weight: 500;
+      border-radius: 12px;
+      margin-bottom: 0.35rem;
+      padding: 0.72rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-link.active {
+      background: #eef4ff;
+      color: #0d6efd;
+      transform: translateX(2px);
+    }
+
+    .content-wrapper {
+      margin-top: var(--topbar-height);
+      margin-left: var(--sidebar-width);
+      min-height: calc(100vh - var(--topbar-height));
+      padding: 1.5rem;
+      transition: margin-left 0.28s ease;
+    }
+
+    .stat-card {
+      border: 0;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .stat-card .card-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 110px;
+    }
+
+    .stat-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .chart-card,
+    .table-card,
+    .notify-card {
+      border: 0;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      background: #ffffff;
+    }
+
+    .notify-item {
+      display: flex;
+      gap: 0.85rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px dashed #e6eaf0;
+    }
+
+    .notify-item:last-child {
+      border-bottom: 0;
+    }
+
+    .notify-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: var(--topbar-height) 0 0 0;
+      background: rgba(17, 24, 39, 0.35);
+      z-index: 1025;
+      display: none;
+    }
+
+    .sidebar-backdrop.show {
+      display: block;
+    }
+
+    @media (max-width: 991.98px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.show {
+        transform: translateX(0);
+      }
+
+      .content-wrapper {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar top-navbar fixed-top px-3 px-lg-4">
+    <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" type="button" aria-label="Toggle sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="brand-logo">
+          <i class="fa-solid fa-bolt text-primary"></i>
+          EventFlow Admin Portal
+        </span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 gap-md-3">
+        <button class="btn btn-light border rounded-circle" type="button" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+        <button class="btn btn-light border rounded-circle" type="button" aria-label="Admin profile">
+          <i class="fa-regular fa-user"></i>
+        </button>
+        <button class="btn btn-danger btn-sm px-3" type="button">
+          <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <aside class="sidebar" id="adminSidebar">
+    <ul class="nav flex-column">
+      <li class="nav-item"><a class="nav-link active" href="#"><i class="fa-solid fa-gauge-high"></i>Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-calendar-check"></i>Manage Events</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-user-tie"></i>Manage Organizers</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-users"></i>Manage Users</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-ticket"></i>Tickets &amp; Payments</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-comment-dots"></i>Feedback</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-bell"></i>Notifications</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-chart-line"></i>Reports</a></li>
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fa-solid fa-gear"></i>Settings</a></li>
+      <li class="nav-item mt-2"><a class="nav-link text-danger" href="#"><i class="fa-solid fa-right-from-bracket"></i>Logout</a></li>
+    </ul>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <main class="content-wrapper">
+    <div class="container-fluid px-0">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h4 class="mb-0 fw-semibold">Dashboard Overview</h4>
+        <span class="text-muted small">Updated: March 12, 2026</span>
+      </div>
+
+      <section class="row g-3 g-xl-4 mb-4">
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl-2">
+          <div class="card stat-card h-100">
+            <div class="card-body">
+              <div>
+                <p class="text-muted mb-1 small">Total Events</p>
+                <h5 class="mb-0">128</h5>
+              </div>
+              <span class="stat-icon bg-primary"><i class="fa-solid fa-calendar-days"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl-2">
+          <div class="card stat-card h-100">
+            <div class="card-body">
+              <div>
+                <p class="text-muted mb-1 small">Total Organizers</p>
+                <h5 class="mb-0">46</h5>
+              </div>
+              <span class="stat-icon bg-success"><i class="fa-solid fa-user-tie"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl-2">
+          <div class="card stat-card h-100">
+            <div class="card-body">
+              <div>
+                <p class="text-muted mb-1 small">Total Attendees</p>
+                <h5 class="mb-0">12,430</h5>
+              </div>
+              <span class="stat-icon bg-info"><i class="fa-solid fa-users"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl-3">
+          <div class="card stat-card h-100">
+            <div class="card-body">
+              <div>
+                <p class="text-muted mb-1 small">Tickets Sold</p>
+                <h5 class="mb-0">9,875</h5>
+              </div>
+              <span class="stat-icon bg-warning"><i class="fa-solid fa-ticket"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-4 col-xxl-3">
+          <div class="card stat-card h-100">
+            <div class="card-body">
+              <div>
+                <p class="text-muted mb-1 small">Revenue Generated</p>
+                <h5 class="mb-0">$245,900</h5>
+              </div>
+              <span class="stat-icon bg-danger"><i class="fa-solid fa-sack-dollar"></i></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="row g-4 mb-4">
+        <div class="col-12 col-xl-8">
+          <div class="card chart-card h-100">
+            <div class="card-header bg-white border-0 pt-3">
+              <h6 class="mb-0 fw-semibold">Event Registrations Overview</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="registrationLineChart" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="card chart-card h-100">
+            <div class="card-header bg-white border-0 pt-3">
+              <h6 class="mb-0 fw-semibold">Ticket Sales by Event</h6>
+            </div>
+            <div class="card-body">
+              <canvas id="ticketBarChart" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="row g-4">
+        <div class="col-12 col-xxl-8">
+          <div class="card table-card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+              <h6 class="mb-0 fw-semibold">Recent Events</h6>
+            </div>
+            <div class="card-body pt-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col">Event Name</th>
+                      <th scope="col">Organizer</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Participants</th>
+                      <th scope="col">Status</th>
+                      <th scope="col" class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Startup Summit 2026</td>
+                      <td>Alpha Events Co.</td>
+                      <td>2026-04-10</td>
+                      <td>850</td>
+                      <td><span class="badge text-bg-success">Active</span></td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Design Leaders Forum</td>
+                      <td>PixelStage</td>
+                      <td>2026-04-18</td>
+                      <td>530</td>
+                      <td><span class="badge text-bg-warning">Draft</span></td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Tech Connect Expo</td>
+                      <td>Nexa Organizer Hub</td>
+                      <td>2026-05-01</td>
+                      <td>1,240</td>
+                      <td><span class="badge text-bg-info">Scheduled</span></td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Marketing Growth Bootcamp</td>
+                      <td>GrowthNest</td>
+                      <td>2026-05-12</td>
+                      <td>410</td>
+                      <td><span class="badge text-bg-secondary">Closed</span></td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xxl-4">
+          <div class="card notify-card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+              <h6 class="mb-0 fw-semibold">Recent Notifications</h6>
+            </div>
+            <div class="card-body pt-0">
+              <div class="notify-item">
+                <span class="notify-dot bg-danger"></span>
+                <div>
+                  <p class="mb-1 fw-semibold small">Payment Alert</p>
+                  <p class="mb-0 text-muted small">3 transactions failed in last hour.</p>
+                </div>
+              </div>
+              <div class="notify-item">
+                <span class="notify-dot bg-primary"></span>
+                <div>
+                  <p class="mb-1 fw-semibold small">New Organizer Request</p>
+                  <p class="mb-0 text-muted small">Evently requested organizer verification.</p>
+                </div>
+              </div>
+              <div class="notify-item">
+                <span class="notify-dot bg-success"></span>
+                <div>
+                  <p class="mb-1 fw-semibold small">Event Milestone</p>
+                  <p class="mb-0 text-muted small">Tech Connect Expo crossed 1,000 registrations.</p>
+                </div>
+              </div>
+              <div class="notify-item">
+                <span class="notify-dot bg-warning"></span>
+                <div>
+                  <p class="mb-1 fw-semibold small">System Reminder</p>
+                  <p class="mb-0 text-muted small">Monthly report generation is due tomorrow.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <script>
+    const sidebar = document.getElementById("adminSidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+
+    function toggleSidebar() {
+      sidebar.classList.toggle("show");
+      sidebarBackdrop.classList.toggle("show");
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove("show");
+      sidebarBackdrop.classList.remove("show");
+    }
+
+    sidebarToggle.addEventListener("click", toggleSidebar);
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+
+    const lineCtx = document.getElementById("registrationLineChart");
+    new Chart(lineCtx, {
+      type: "line",
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+        datasets: [
+          {
+            label: "Registrations",
+            data: [650, 820, 940, 1130, 1260, 1420, 1580],
+            borderColor: "#0d6efd",
+            backgroundColor: "rgba(13, 110, 253, 0.12)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: "#0d6efd"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: "top" }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+
+    const barCtx = document.getElementById("ticketBarChart");
+    new Chart(barCtx, {
+      type: "bar",
+      data: {
+        labels: ["Startup Summit", "Design Forum", "Tech Expo", "Growth Camp"],
+        datasets: [
+          {
+            label: "Tickets Sold",
+            data: [2200, 1450, 3100, 980],
+            backgroundColor: ["#0d6efd", "#20c997", "#ffc107", "#dc3545"],
+            borderRadius: 8
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

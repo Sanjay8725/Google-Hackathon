@@ -1,14 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EventFlow - Seamless Event Management</title>
-    <script type="module" crossorigin src="/assets/index-G8mOT09a.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-ByAVsXCo.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seamless Event Management - EventFlow</title>
+  <script type="module" crossorigin src="/assets/index-Cy3c208w.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-B4IBdhx6.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🎯 EventFlow</div>
+            <button class="nav-btn" onclick="goToAuth()">Get Started</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Seamless Event Management</h1>
+            <p class="hero-subtitle">One platform for the entire event lifecycle: Plan → Execute → Analyze</p>
+
+            <div class="hero-animation">
+                <div class="flow-container">
+                    <div class="flow-box">📋 Plan</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">🎪 Execute</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">📊 Analyze</div>
+                </div>
+            </div>
+
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="goToAuth('organizer')">Start as Organizer</button>
+                <button class="btn btn-secondary" onclick="goToAuth('attendee')">Find Events</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Stats -->
+    <section class="stats-section">
+        <div class="stat-card">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Events Hosted</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">50K+</div>
+            <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">98%</div>
+            <div class="stat-label">Satisfaction Rate</div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <h2 class="section-title">Why Choose EventFlow?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-box">🎨</div>
+                <h3>Smart Event Creation</h3>
+                <p>AI-based setup with agenda suggestions & budget estimator</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box">👥</div>
+                <h3>Personalized Dashboard</h3>
+                <p>Each attendee gets custom schedule & QR pass</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box">⚡</div>
+                <h3>Real-Time Tracking</h3>
+                <p>Live attendance, crowd density & analytics</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Transform Event Management?</h2>
+            <button class="btn btn-large" onclick="goToAuth()">Get Started Now</button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 EventFlow. All rights reserved.</p>
+    </footer>
+
+</body>
 </html>
