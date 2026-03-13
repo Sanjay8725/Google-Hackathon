@@ -408,21 +408,38 @@
 
     loadOrganizerEventsForExpenses();
 
-    // Mobile hamburger menu
+    // Mobile hamburger menu toggle for sliding sidebar
     const orgMenuToggle = document.getElementById("orgMenuToggle");
-    const orgOverlay = document.getElementById("orgOverlay");
-    const orgSidebar = document.getElementById("orgSidebar");
-    if (orgMenuToggle && orgOverlay && orgSidebar) {
+    const mobileMenuBar = document.getElementById("mobileMenuBar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+
+    if (orgMenuToggle) {
       orgMenuToggle.addEventListener("click", function () {
-        orgSidebar.classList.toggle("mobile-open");
-        orgMenuToggle.classList.toggle("active");
-        orgOverlay.classList.toggle("active");
-      });
-      orgOverlay.addEventListener("click", function () {
-        orgSidebar.classList.remove("mobile-open");
-        orgMenuToggle.classList.remove("active");
-        orgOverlay.classList.remove("active");
+        if (mobileMenuBar) {
+          mobileMenuBar.classList.toggle("show");
+          sidebarBackdrop.classList.toggle("show");
+        }
       });
     }
+
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener("click", function () {
+        mobileMenuBar.classList.remove("show");
+        sidebarBackdrop.classList.remove("show");
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (
+        mobileMenuBar &&
+        !mobileMenuBar.contains(e.target) &&
+        !orgMenuToggle.contains(e.target)
+      ) {
+        if (mobileMenuBar.classList.contains("show")) {
+          mobileMenuBar.classList.remove("show");
+          sidebarBackdrop.classList.remove("show");
+        }
+      }
+    });
   });
 })();

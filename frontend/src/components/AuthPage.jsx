@@ -118,7 +118,10 @@ function AuthPage() {
           </button>
           <button 
             className={`auth-tab ${!isLogin ? 'active' : ''}`}
-            onClick={() => setIsLogin(false)}
+            onClick={() => {
+              setIsLogin(false)
+              setRole('attendee')
+            }}
           >
             Register
           </button>
@@ -191,7 +194,6 @@ function AuthPage() {
                   required={!isLogin}
                 >
                   <option value="attendee">Attendee</option>
-                  <option value="organizer">Organizer</option>
                 </select>
               </div>
             </>

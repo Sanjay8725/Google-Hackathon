@@ -1,6 +1,7 @@
 (function () {
   let isLogin = true;
   let selectedRole = null;
+  const selfSignupRole = 'attendee';
 
   function setMessage(message, isError) {
     const msg = document.getElementById('authMessage');
@@ -24,6 +25,31 @@
       const btn = document.getElementById(id);
       if (btn) btn.classList.add('active');
     }
+  }
+
+  function updateRoleAvailability() {
+    const restrictedRoles = ['admin', 'organizer'];
+    restrictedRoles.forEach((role) => {
+      const button = document.getElementById(role + 'Role');
+      if (!button) return;
+      const shouldDisable = !isLogin;
+      button.disabled = shouldDisable;
+      button.classList.toggle('signup-disabled', shouldDisable);
+      button.classList.toggle('hidden', shouldDisable);
+      button.setAttribute('aria-disabled', String(shouldDisable));
+    });
+
+    const signupRoleNote = document.getElementById('signupRoleNote');
+    if (signupRoleNote) {
+      signupRoleNote.classList.toggle('hidden', isLogin);
+    }
+
+    if (!isLogin && selectedRole !== selfSignupRole) {
+      selectedRole = selfSignupRole;
+      localStorage.setItem('selectedRole', selectedRole);
+    }
+
+    syncSelectedRole();
   }
 
   function toggleAuth(forceLogin) {
@@ -73,9 +99,16 @@
       usernameField.classList.remove('hidden');
       emailLabel.textContent = 'Email';
     }
+
+    updateRoleAvailability();
   }
 
   function selectRole(role) {
+    if (!isLogin && role !== selfSignupRole) {
+      setMessage('Admin and Organizer accounts are login-only. Please sign up as Attendee.', true);
+      return;
+    }
+
     selectedRole = role;
     localStorage.setItem('selectedRole', role);
     syncSelectedRole();
@@ -176,6 +209,7 @@
       selectedRole = savedRole;
       syncSelectedRole();
     }
+    updateRoleAvailability();
   });
 
   window.toggleAuth = toggleAuth;

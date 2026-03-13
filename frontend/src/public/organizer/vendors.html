@@ -122,23 +122,52 @@
         </div>
       </div>
 
-      <div class="org-overlay" id="orgOverlay"></div>
-      <div class="dashboard-sidebar" id="orgSidebar">
-        <nav class="sidebar-nav">
-          <a class="nav-item" href="organizer-dashboard.html">📊 Events</a>
-          <a class="nav-item" href="analytics.html">
-            📈 Analytics
+      <div class="sidebar-backdrop" id="desktopBackdrop"></div>
+      <aside class="organizer-sidebar" id="orgSidebar">
+        <div class="brand">EventFlow Organizer</div>
+        <button class="nav-link" type="button" data-organizer-section="dashboard" onclick="handleSidebarNavigation('dashboard')">📊 Events</button>
+        <button class="nav-link" type="button" data-organizer-section="analytics" onclick="handleSidebarNavigation('analytics')">📈 Analytics</button>
+        <button class="nav-link" type="button" data-organizer-section="expense" onclick="handleSidebarNavigation('expense')">💸 Expense Tracker</button>
+        <button class="nav-link active" type="button" data-organizer-section="vendors" onclick="handleSidebarNavigation('vendors')">👥 Vendors</button>
+        <button class="nav-link" type="button" data-organizer-section="settings" onclick="handleSidebarNavigation('settings')">⚙️ Settings</button>
+        <div class="sidebar-bottom">
+          <span id="currentOrganizerLabel" class="pill">Organizer</span>
+          <button class="btn btn-danger" type="button" id="logoutButton">Logout</button>
+        </div>
+      </aside>
+
+      <!-- Mobile Menu Sidebar - Admin Pattern -->
+      <div class="mobile-menu-bar" id="mobileMenuBar">
+        <div class="mobile-menu-content">
+          <a href="organizer-dashboard.html" class="mobile-menu-item">
+            <span class="mobile-menu-icon">📊</span>
+            <span class="mobile-menu-label">Events</span>
           </a>
-          <a class="nav-item" href="expense.html">
-            💸 Expense Tracker
+          <a href="analytics.html" class="mobile-menu-item">
+            <span class="mobile-menu-icon">📈</span>
+            <span class="mobile-menu-label">Analytics</span>
           </a>
-          <a class="nav-item active" href="vendors.html">👥 Vendors</a>
-          <a class="nav-item" href="settings.html">
-            ⚙️ Settings
+          <a href="expense.html" class="mobile-menu-item">
+            <span class="mobile-menu-icon">💸</span>
+            <span class="mobile-menu-label">Expense</span>
           </a>
-          <div class="nav-item logout-nav" onclick="logout()">🚪 Logout</div>
-        </nav>
+          <a href="#" class="mobile-menu-item active" onclick="document.getElementById('mobileMenuBar').classList.remove('show'); document.getElementById('sidebarBackdrop').classList.remove('show'); return false;">
+            <span class="mobile-menu-icon">👥</span>
+            <span class="mobile-menu-label">Vendors</span>
+          </a>
+          <a href="settings.html" class="mobile-menu-item">
+            <span class="mobile-menu-icon">⚙️</span>
+            <span class="mobile-menu-label">Settings</span>
+          </a>
+          <a href="#" class="mobile-menu-item" onclick="logout(); return false;">
+            <span class="mobile-menu-icon">🚪</span>
+            <span class="mobile-menu-label">Logout</span>
+          </a>
+        </div>
       </div>
+
+      <!-- Sidebar Backdrop -->
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
       <div class="dashboard-main">
         <section class="events-section">

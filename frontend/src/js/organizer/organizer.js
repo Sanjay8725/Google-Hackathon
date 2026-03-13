@@ -252,8 +252,41 @@
     }
   }
 
+  function handleSidebarNavigation(section) {
+    // Remove active class from all nav-links
+    document.querySelectorAll(".organizer-sidebar .nav-link").forEach((btn) => {
+      btn.classList.remove("active");
+    });
+
+    // Add active class to clicked button
+    event.target.closest(".nav-link").classList.add("active");
+
+    // Navigate based on section
+    const navigationMap = {
+      dashboard: "organizer-dashboard.html",
+      analytics: "analytics.html",
+      expense: "expense.html",
+      vendors: "vendors.html",
+      settings: "settings.html"
+    };
+
+    const targetUrl = navigationMap[section];
+    if (targetUrl && targetUrl !== window.location.pathname.split('/').pop()) {
+      window.location.href = targetUrl;
+    }
+
+    // Close mobile menu if open
+    const mobileMenuBar = document.getElementById("mobileMenuBar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    if (mobileMenuBar && mobileMenuBar.classList.contains("show")) {
+      mobileMenuBar.classList.remove("show");
+      sidebarBackdrop.classList.remove("show");
+    }
+  }
+
   window.logout = logout;
   window.showSection = showSection;
+  window.handleSidebarNavigation = handleSidebarNavigation;
   window.viewEventAnalytics = () => alert("Analytics view coming soon.");
   window.startQRScanner = () => alert("QR scanner coming soon.");
   window.toggleNotifications = toggleNotifications;
@@ -266,35 +299,59 @@
       createEventForm.addEventListener("submit", handleCreateEvent);
     }
 
-    // Mobile hamburger menu
+    // Sidebar navigation buttons - Admin pattern
+    const navLinks = document.querySelectorAll(".organizer-sidebar .nav-link");
+    navLinks.forEach((link) => {
+      link.addEventListener("click", function () {
+        const section = this.getAttribute("data-organizer-section");
+        handleSidebarNavigation(section);
+      });
+    });
+
+    // Logout button
+    const logoutButton = document.getElementById("logoutButton");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", logout);
+    }
+
+    // Mobile hamburger menu toggle for sliding sidebar
     const orgMenuToggle = document.getElementById("orgMenuToggle");
+    const mobileMenuBar = document.getElementById("mobileMenuBar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const orgOverlay = document.getElementById("orgOverlay");
     const orgSidebar = document.getElementById("orgSidebar");
 
-    if (orgMenuToggle && orgOverlay && orgSidebar) {
+    // Admin-pattern mobile menu toggle
+    if (orgMenuToggle) {
       orgMenuToggle.addEventListener("click", function () {
-        orgSidebar.classList.toggle("mobile-open");
-        orgMenuToggle.classList.toggle("active");
-        orgOverlay.classList.toggle("active");
-      });
-      orgOverlay.addEventListener("click", function () {
-        orgSidebar.classList.remove("mobile-open");
-        orgMenuToggle.classList.remove("active");
-        orgOverlay.classList.remove("active");
-      });
-      document.addEventListener("click", function (e) {
-        if (
-          !orgSidebar.contains(e.target) &&
-          !orgMenuToggle.contains(e.target)
-        ) {
-          if (orgSidebar.classList.contains("mobile-open")) {
-            orgSidebar.classList.remove("mobile-open");
-            orgMenuToggle.classList.remove("active");
-            orgOverlay.classList.remove("active");
-          }
+        if (mobileMenuBar) {
+          mobileMenuBar.classList.toggle("show");
+          sidebarBackdrop.classList.toggle("show");
         }
       });
     }
+
+    // Backdrop click to close menu
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener("click", function () {
+        mobileMenuBar.classList.remove("show");
+        sidebarBackdrop.classList.remove("show");
+      });
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener("click", function (e) {
+      if (
+        mobileMenuBar &&
+        !mobileMenuBar.contains(e.target) &&
+        !orgMenuToggle.contains(e.target)
+      ) {
+        if (mobileMenuBar.classList.contains("show")) {
+          mobileMenuBar.classList.remove("show");
+          sidebarBackdrop.classList.remove("show");
+        }
+      }
+    });
 
     loadOrganizerEvents();
   });

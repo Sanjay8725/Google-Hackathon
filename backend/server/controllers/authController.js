@@ -14,6 +14,7 @@ try {
 }
 
 const VALID_ROLES = new Set(['admin', 'organizer', 'attendee']);
+const SELF_SIGNUP_ROLES = new Set(['attendee']);
 const CREDENTIAL_TABLE_BY_ROLE = {
   admin: 'admin_credentials',
   organizer: 'organizer_credentials',
@@ -45,6 +46,13 @@ exports.register = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Invalid role'
+    });
+  }
+
+  if (!SELF_SIGNUP_ROLES.has(safeRole)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Sign up is available only for attendee accounts. Please contact admin.'
     });
   }
 

@@ -41,7 +41,7 @@ body {
 body {
   font-family: 'Poppins', 'Trebuchet MS', 'Segoe UI', sans-serif;
   background: var(--bg-dark);
-  color: var(--text-light);
+  color: rgb(48, 4, 245);
   overflow-x: hidden;
   line-height: 1.6;
 }

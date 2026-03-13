@@ -114,6 +114,20 @@
   color: var(--primary);
 }
 
+.role-btn.signup-disabled,
+.role-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.role-note {
+  margin-top: 0.75rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
 /* Form */
 .auth-form {
   display: flex;

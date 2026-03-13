@@ -22,10 +22,11 @@
             <div class="role-selection">
                 <p class="role-label">I am a:</p>
                 <div class="role-buttons">
-                    <button type="button" class="role-btn" id="adminRole" onclick="selectRole('admin')">🛡️ Admin</button>
-                    <button type="button" class="role-btn" id="organizerRole" onclick="selectRole('organizer')">🎪 Event Organizer</button>
+                    <button type="button" class="role-btn login-only-role" id="adminRole" onclick="selectRole('admin')">🛡️ Admin</button>
+                    <button type="button" class="role-btn login-only-role" id="organizerRole" onclick="selectRole('organizer')">🎪 Event Organizer</button>
                     <button type="button" class="role-btn" id="attendeeRole" onclick="selectRole('attendee')">👤 Attendee</button>
                 </div>
+                <p id="signupRoleNote" class="role-note hidden">Admin and Organizer are login only. New signup is available for Attendee only.</p>
             </div>
 
             <form class="auth-form" onsubmit="handleAuth(event)">

@@ -487,5 +487,39 @@
   document.addEventListener("DOMContentLoaded", function () {
     loadSettings();
     loadSettingsSection("profile"); // Load default section
+
+    // Mobile hamburger menu toggle for sliding sidebar
+    const orgMenuToggle = document.getElementById("orgMenuToggle");
+    const mobileMenuBar = document.getElementById("mobileMenuBar");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+
+    if (orgMenuToggle) {
+      orgMenuToggle.addEventListener("click", function () {
+        if (mobileMenuBar) {
+          mobileMenuBar.classList.toggle("show");
+          sidebarBackdrop.classList.toggle("show");
+        }
+      });
+    }
+
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener("click", function () {
+        mobileMenuBar.classList.remove("show");
+        sidebarBackdrop.classList.remove("show");
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (
+        mobileMenuBar &&
+        !mobileMenuBar.contains(e.target) &&
+        !orgMenuToggle.contains(e.target)
+      ) {
+        if (mobileMenuBar.classList.contains("show")) {
+          mobileMenuBar.classList.remove("show");
+          sidebarBackdrop.classList.remove("show");
+        }
+      }
+    });
   });
 })();
