@@ -104,8 +104,24 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ Server running on port http://localhost:${PORT}`);
   console.log(`✅ API available at http://localhost:${PORT}/api`);
   console.log(`✅ Database: Connected with fallback support`);
+});
+
+server.on('error', (error) => {
+  if (error && error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Stop the running process on that port or start this server with a different PORT value.`);
+    console.error(`Windows example: set PORT=3001 && npm run server:prod`);
+    process.exit(1);
+  }
+
+  if (error && error.code === 'EACCES') {
+    console.error(`Insufficient permissions to bind to port ${PORT}. Try a different PORT value.`);
+    process.exit(1);
+  }
+
+  console.error('Server startup error:', error);
+  process.exit(1);
 });
