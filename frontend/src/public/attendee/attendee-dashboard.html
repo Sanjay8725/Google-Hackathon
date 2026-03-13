@@ -55,8 +55,6 @@
                         </div>
                     </div>
                 </div>
-
-                <button type="button" class="portal-logout-btn" onclick="logout()">🚪 Logout</button>
             </div>
         </div>
     </header>
@@ -100,11 +98,6 @@
                     <span class="sidebar-link-icon">💬</span>
                     <span class="sidebar-link-label">Event Feedback</span>
                 </a>
-                <a class="sidebar-link" data-page="notifications" onclick="switchPage('notifications')">
-                    <span class="sidebar-link-icon">🔔</span>
-                    <span class="sidebar-link-label">Notifications</span>
-                    <span class="sidebar-notif-badge hidden" id="sidebarNotifBadge">0</span>
-                </a>
             </nav>
 
             <!-- Sidebar footer -->
@@ -132,14 +125,19 @@
                 <div class="stats-grid" id="dashboardStats">
                     <div class="stat-card loading-card"><div class="spinner"></div></div>
                 </div>
-                <h3 class="section-heading live-heading">🔴 Live Now</h3>
-                <div id="dashLiveSessions" class="live-sessions-grid">
-                    <div class="loading"><div class="spinner"></div></div>
-                </div>
-                <h3 class="section-heading">🗓️ Upcoming Events</h3>
-                <div id="dashUpcoming" class="events-card-grid">
-                    <div class="loading"><div class="spinner"></div></div>
-                </div>
+                <div class="dashboard-events-row">
+    <div class="dashboard-events-col">
+        <h3 class="section-heading">🗓️ Upcoming Events</h3>
+        <div id="dashUpcoming" class="events-card-grid"></div>
+    </div>
+    <div class="dashboard-events-col">
+        <h3 class="section-heading live-heading">
+            🔴 Live Now 
+            <button type="button" class="live-toggle-btn" id="liveToggleBtn" onclick="toggleLiveSessions()">▼</button>
+        </h3>
+        <div id="dashLiveSessions" class="live-sessions-grid"></div>
+    </div>
+</div>
             </section>
 
             <!-- ══════════════════════════════
@@ -192,7 +190,6 @@
                     <div class="loading"><div class="spinner"></div></div>
                 </div>
                 <div id="qrViewPanel" class="qr-panel hidden">
-                    <button type="button" class="back-link-btn" onclick="closeQrPanel()">&#8592; Back to Tickets</button>
                     <div id="qrPanelContent"></div>
                 </div>
             </section>
@@ -209,7 +206,6 @@
                     <div class="loading"><div class="spinner"></div></div>
                 </div>
                 <div id="feedbackInlineForm" class="feedback-inline-form hidden">
-                    <button type="button" class="back-link-btn" onclick="closeFeedbackForm()">&#8592; Back to Feedback</button>
                     <div class="feedback-form-card">
                         <h3 id="fbFormTitle">Submit Feedback</h3>
                         <p class="fb-event-meta" id="fbEventMeta"></p>

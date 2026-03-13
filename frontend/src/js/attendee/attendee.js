@@ -13,6 +13,7 @@
   let currentFeedbackEventTitle = '';
   let currentRating = 5;
   let tabsLoaded = {};
+  let liveCollapsed = false;
 
   // ── Utility ──
   function escapeHtml(v) {
@@ -164,9 +165,21 @@
     // Live sessions on dashboard
     const livEl = document.getElementById('dashLiveSessions');
     if (livEl) {
-      livEl.innerHTML = liveEvents.length
-        ? liveEvents.map(e => buildLiveSessionCard(e)).join('')
-        : '<div class="empty-state"><div class="empty-state-icon">📡</div><div class="empty-state-text">No live sessions right now.</div></div>';
+      if (liveCollapsed) {
+        livEl.innerHTML = '';
+        livEl.style.display = 'none';
+      } else {
+        livEl.style.display = 'flex';
+        livEl.innerHTML = liveEvents.length
+          ? liveEvents.map(e => buildLiveSessionCard(e)).join('')
+          : '<div class="empty-state"><div class="empty-state-text">No live sessions right now.</div></div>';
+      }
+    }
+
+    // Update toggle button
+    const toggleBtn = document.getElementById('liveToggleBtn');
+    if (toggleBtn) {
+      toggleBtn.classList.toggle('collapsed', liveCollapsed);
     }
 
     // Upcoming events on dashboard
@@ -174,7 +187,7 @@
     if (upEl) {
       upEl.innerHTML = upcoming.length
         ? upcoming.map(e => buildEventCard(e)).join('')
-        : '<div class="empty-state"><div class="empty-state-icon">🗓️</div><div class="empty-state-text">No upcoming events.</div></div>';
+        : '<div class="empty-state"><div class="empty-state-text">No upcoming events.</div></div>';
     }
   }
 
@@ -344,6 +357,11 @@
     const panel = document.getElementById('qrViewPanel');
     if (panel) panel.classList.add('hidden');
     if (grid) grid.classList.remove('hidden');
+  }
+
+  function toggleLiveSessions() {
+    liveCollapsed = !liveCollapsed;
+    renderDashboard();
   }
 
   // ── Event Feedback Tab ──
