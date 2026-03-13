@@ -1,92 +1,208 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Organizer Analytics - EventFlow</title>
-    <link rel="stylesheet" href="../../styles/globals.css">
-    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
-</head>
-<body>
+    <link rel="stylesheet" href="../../styles/globals.css" />
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css" />
+  </head>
+  <body>
     <div class="organizer-dashboard">
-        <header class="dashboard-header">
-            <div class="header-content">
-                <button class="org-menu-toggle" id="orgMenuToggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-                <h1>📈 Organizer Analytics</h1>
-                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      <header class="dashboard-header">
+        <div class="header-content">
+          <button
+            class="org-menu-toggle"
+            id="orgMenuToggle"
+            type="button"
+            aria-label="Toggle menu"
+          >
+            <span></span><span></span><span></span>
+          </button>
+          <h1>🎯 Organizer Dashboard</h1>
+          <div class="header-actions">
+            <button
+              class="notification-btn"
+              onclick="toggleNotifications()"
+              aria-label="Notifications"
+            >
+              🔔
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+          <h4>Vendor Management</h4>
+        </div>
+        <div class="notification-list" id="notificationList">
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('add')"
+          >
+            <div class="notification-icon">➕</div>
+            <div class="notification-content">
+              <p>Add Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
             </div>
-        </header>
-
-    <div class="org-overlay" id="orgOverlay"></div>
-    <div class="dashboard-sidebar" id="orgSidebar">
-            <nav class="sidebar-nav">
-                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
-                <div class="nav-item active">📈 Analytics</div>
-                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
-                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
-                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
-            </nav>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('details')"
+          >
+            <div class="notification-icon">👁️</div>
+            <div class="notification-content">
+              <p>View Vendor Details Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('search')"
+          >
+            <div class="notification-icon">🔍</div>
+            <div class="notification-content">
+              <p>Search Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('assign')"
+          >
+            <div class="notification-icon">🔗</div>
+            <div class="notification-content">
+              <p>Assign Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('track')"
+          >
+            <div class="notification-icon">💰</div>
+            <div class="notification-content">
+              <p>Track Vendor Cost Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="dashboard-main">
-            <section class="events-section">
-                <h2>Event Performance</h2>
-                <div class="analytics-tools-grid">
-                    <article class="analytics-card">
-                        <h3>Track Engagement (engagement_logs)</h3>
-                        <form id="engagementForm" class="analytics-form">
-                            <div class="field">
-                                <label for="engagementEventId">Event ID</label>
-                                <input id="engagementEventId" type="number" required />
-                            </div>
-                            <div class="field">
-                                <label for="engagementUserId">User ID</label>
-                                <input id="engagementUserId" type="number" required />
-                            </div>
-                            <div class="field">
-                                <label for="engagementAction">Action</label>
-                                <input id="engagementAction" placeholder="viewed_schedule" required />
-                            </div>
-                            <button class="btn-register" type="submit">Track Action</button>
-                        </form>
-                        <div id="engagementMessage" class="analytics-message" aria-live="polite"></div>
-                    </article>
+      <div class="org-overlay" id="orgOverlay"></div>
+      <div class="dashboard-sidebar" id="orgSidebar">
+        <nav class="sidebar-nav">
+          <a class="nav-item" href="organizer-dashboard.html">📊 Events</a>
+          <a class="nav-item active" href="analytics.html">📈 Analytics</a>
+          <a class="nav-item" href="expense.html">
+            💸 Expense Tracker
+          </a>
+          <a class="nav-item" href="vendors.html">
+            👥 Vendors
+          </a>
+          <a class="nav-item" href="settings.html">
+            ⚙️ Settings
+          </a>
+          <div class="nav-item logout-nav" onclick="logout()">🚪 Logout</div>
 
-                    <article class="analytics-card">
-                        <h3>API Connection Check</h3>
-                        <div class="analytics-connection-row">
-                            <button id="checkConnectionBtn" class="btn-register" type="button">Check Analytics Connection</button>
-                        </div>
-                        <div id="connectionMessage" class="analytics-message" aria-live="polite"></div>
-                        <pre id="analyticsOutput" class="analytics-output">Run connection check to load organizer analytics data.</pre>
-                    </article>
+        </nav>
+      </div>
 
-                    <article class="analytics-card">
-                        <h3>Read Data (events, analytics, feedback)</h3>
-                        <form id="queriesForm" class="analytics-form">
-                            <div class="field">
-                                <label for="queryEventId">Event ID for analytics</label>
-                                <input id="queryEventId" type="number" value="1" required />
-                            </div>
-                            <div class="field">
-                                <label for="queryOrganizerId">Organizer ID for dashboard</label>
-                                <input id="queryOrganizerId" type="number" required />
-                            </div>
-                            <div class="analytics-actions">
-                                <button class="btn-register" type="button" id="btnGetEvents">Get All Events</button>
-                                <button class="btn-register btn-secondary" type="button" id="btnGetFeedbackStats">Get Feedback Stats</button>
-                                <button class="btn-register btn-secondary" type="button" id="btnGetEventAnalytics">Get Event Analytics</button>
-                                <button class="btn-register btn-secondary" type="button" id="btnGetDashboardAnalytics">Get Organizer Analytics</button>
-                            </div>
-                        </form>
-                    </article>
+      <div class="dashboard-main">
+        <section class="events-section">
+          <h2>Event Performance</h2>
+          <div class="analytics-tools-grid">
+            <article class="analytics-card">
+              <h3>Track Engagement (engagement_logs)</h3>
+              <form id="engagementForm" class="analytics-form">
+                <div class="field">
+                  <label for="engagementEventId">Event ID</label>
+                  <input id="engagementEventId" type="number" required />
                 </div>
-            </section>
-        </div>
+                <div class="field">
+                  <label for="engagementUserId">User ID</label>
+                  <input id="engagementUserId" type="number" required />
+                </div>
+                <div class="field">
+                  <label for="engagementAction">Action</label>
+                  <input
+                    id="engagementAction"
+                    placeholder="viewed_schedule"
+                    required
+                  />
+                </div>
+                <button class="btn-register" type="submit">Track Action</button>
+              </form>
+              <div
+                id="engagementMessage"
+                class="analytics-message"
+                aria-live="polite"
+              ></div>
+            </article>
+
+            <article class="analytics-card">
+              <h3>API Connection Check</h3>
+              <div class="analytics-connection-row">
+                <button
+                  id="checkConnectionBtn"
+                  class="btn-register"
+                  type="button"
+                >
+                  Check Analytics Connection
+                </button>
+              </div>
+              <div
+                id="connectionMessage"
+                class="analytics-message"
+                aria-live="polite"
+              ></div>
+              <pre id="analyticsOutput" class="analytics-output">
+Run connection check to load organizer analytics data.</pre
+              >
+            </article>
+
+            <article class="analytics-card">
+              <h3>Read Data (events, analytics, feedback)</h3>
+              <form id="queriesForm" class="analytics-form">
+                <div class="field">
+                  <label for="queryEventId">Event ID for analytics</label>
+                  <input id="queryEventId" type="number" value="1" required />
+                </div>
+                <div class="field">
+                  <label for="queryOrganizerId"
+                    >Organizer ID for dashboard</label
+                  >
+                  <input id="queryOrganizerId" type="number" required />
+                </div>
+                <div class="analytics-actions">
+                  <button class="btn-register" type="button" id="btnGetEvents">
+                    Get All Events
+                  </button>
+                  <button
+                    class="btn-register btn-secondary"
+                    type="button"
+                    id="btnGetFeedbackStats"
+                  >
+                    Get Feedback Status
+                  </button>
+                  <button
+                    class="btn-register btn-secondary"
+                    type="button"
+                    id="btnGetEventAnalytics"
+                  >
+                    Get Event Analytics
+                  </button>
+                </div>
+              </form>
+            </article>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script src="../../js/api.js"></script>
     <script src="../../js/organizer/organizer.js"></script>
     <script src="../../js/organizer/analytics.js"></script>
-</body>
+  </body>
 </html>

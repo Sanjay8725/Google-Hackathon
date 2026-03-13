@@ -9,18 +9,25 @@
 }
 
 :root {
-  --primary: #3498DB;
-  --primary-dark: #2E86DE;
-  --secondary: #1ABC9C;
-  --bg-dark: #07131a;
-  --bg-card: #10212a;
-  --text-light: #0c0c0c;
-  --text-muted: #fa152c;
-  --accent: #8E44AD;
+  --sidebar-deep-ocean: #0b3a5b;
+  --main-ice-blue: #eaf6ff;
+  --accent-clear-blue: #2f80ed;
+  --accent-coral: #ff7f50;
+  --card-pure-white: #ffffff;
+  --text-navy: #102a43;
+  --text-cool-gray: #6b7c93;
+  --primary: var(--accent-clear-blue);
+  --primary-dark: #1f6fd6;
+  --secondary: var(--accent-coral);
+  --bg-dark: var(--main-ice-blue);
+  --bg-card: var(--card-pure-white);
+  --text-light: var(--text-navy);
+  --text-muted: var(--text-cool-gray);
+  --accent: var(--accent-coral);
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --border: #1f3a47;
+  --border: #c7d9ea;
 }
 
 html,
@@ -89,7 +96,7 @@ button {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(20, 184, 166, 0.35);
+  box-shadow: 0 10px 30px rgba(47, 128, 237, 0.28);
 }
 
 .btn-secondary {
@@ -99,7 +106,7 @@ button {
 }
 
 .btn-secondary:hover {
-  background: rgba(20, 184, 166, 0.12);
+  background: rgba(47, 128, 237, 0.12);
 }
 
 .btn-large {
@@ -118,7 +125,7 @@ button {
 
 .card:hover {
   border-color: var(--primary);
-  box-shadow: 0 10px 30px rgba(20, 184, 166, 0.14);
+  box-shadow: 0 10px 30px rgba(47, 128, 237, 0.14);
 }
 
 /* Input Fields */
@@ -127,7 +134,7 @@ textarea,
 select {
   width: 100%;
   padding: 12px;
-  background: white var(--bg-card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-light);

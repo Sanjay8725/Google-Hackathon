@@ -1,59 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Organizer Settings - EventFlow</title>
-    <link rel="stylesheet" href="../../styles/globals.css">
-    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
-</head>
-<body>
+    <link rel="stylesheet" href="../../styles/globals.css" />
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css" />
+  </head>
+  <body>
     <div class="organizer-dashboard">
-        <header class="dashboard-header">
-            <div class="header-content">
-                <button class="org-menu-toggle" id="orgMenuToggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-                <h1>⚙️ Organizer Settings</h1>
-                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+      <header class="dashboard-header">
+        <div class="header-content">
+          <button
+            class="org-menu-toggle"
+            id="orgMenuToggle"
+            type="button"
+            aria-label="Toggle menu"
+          >
+            <span></span><span></span><span></span>
+          </button>
+          <h1>🎯 Organizer Dashboard</h1>
+          <div class="header-actions">
+            <button
+              class="notification-btn"
+              onclick="toggleNotifications()"
+              aria-label="Notifications"
+            >
+              🔔
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+          <h4>Vendor Management</h4>
+        </div>
+        <div class="notification-list" id="notificationList">
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('add')"
+          >
+            <div class="notification-icon">➕</div>
+            <div class="notification-content">
+              <p>Add Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
             </div>
-        </header>
-
-    <div class="org-overlay" id="orgOverlay"></div>
-    <div class="dashboard-sidebar" id="orgSidebar">
-            <nav class="sidebar-nav">
-                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
-                <div class="nav-item" onclick="goDashboard('analytics')">📈 Analytics</div>
-                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
-                <div class="nav-item" onclick="window.location.href='vendors.html'">👥 Vendors</div>
-                <div class="nav-item active">⚙️ Settings</div>
-            </nav>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('details')"
+          >
+            <div class="notification-icon">👁️</div>
+            <div class="notification-content">
+              <p>View Vendor Details Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('search')"
+          >
+            <div class="notification-icon">🔍</div>
+            <div class="notification-content">
+              <p>Search Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('assign')"
+          >
+            <div class="notification-icon">🔗</div>
+            <div class="notification-content">
+              <p>Assign Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('track')"
+          >
+            <div class="notification-icon">💰</div>
+            <div class="notification-content">
+              <p>Track Vendor Cost Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="dashboard-main">
-            <section class="events-section">
-                <h2>Account Preferences</h2>
-                <div class="form-group form-group-constrained">
-                    <label>Display Name</label>
-                    <input type="text" class="filter-input" placeholder="Organizer name" id="displayName">
-                </div>
-                <div class="form-group form-group-constrained">
-                    <label>Notification Email</label>
-                    <input type="email" class="filter-input" placeholder="you@example.com" id="notificationEmail">
-                </div>
-                <div class="form-group form-group-constrained">
-                    <label>Timezone</label>
-                    <select class="filter-select" id="timezone" title="Select your timezone">
-                        <option value="UTC">UTC</option>
-                        <option value="Asia/Kolkata">Asia/Kolkata</option>
-                        <option value="America/New_York">America/New_York</option>
-                    </select>
-                </div>
-                <button type="button" class="action-btn primary" onclick="saveSettings()">Save Settings</button>
-            </section>
-        </div>
+      <div class="org-overlay" id="orgOverlay"></div>
+      <div class="dashboard-sidebar" id="orgSidebar">
+        <nav class="sidebar-nav">
+          <a class="nav-item" href="organizer-dashboard.html">📊 Events</a>
+          <a class="nav-item" href="analytics.html">
+            📈 Analytics
+          </a>
+          <a class="nav-item" href="expense.html">
+            💸 Expense Tracker
+          </a>
+          <a class="nav-item" href="vendors.html">
+            👥 Vendors
+          </a>
+          <div
+            class="nav-item settings-nav active"
+            onclick="showSettingsSection('profile')"
+          >
+            👤 Profile
+          </div>
+          <div
+            class="nav-item settings-nav"
+            onclick="showSettingsSection('security')"
+          >
+            🔒 Security
+          </div>
+          <div
+            class="nav-item settings-nav"
+            onclick="showSettingsSection('preferences')"
+          >
+            ⚙️ Event Preferences
+          </div>
+          <div
+            class="nav-item settings-nav"
+            onclick="showSettingsSection('payments')"
+          >
+            💳 Payments
+          </div>
+          <div
+            class="nav-item settings-nav"
+            onclick="showSettingsSection('appearance')"
+          >
+            🎨 Appearance
+          </div>
+          <div
+            class="nav-item settings-nav"
+            onclick="showSettingsSection('privacy')"
+          >
+            🔐 Data & Privacy
+          </div>
+          <div class="nav-item logout-nav" onclick="logout()">🚪 Logout</div>
+        </nav>
+      </div>
+
+      <div class="dashboard-main">
+        <section class="events-section">
+          <div id="settingsContent">
+            <!-- Settings sections will be loaded here -->
+          </div>
+        </section>
+      </div>
     </div>
 
     <script src="../../js/api.js"></script>
     <script src="../../js/organizer/organizer.js"></script>
     <script src="../../js/organizer/settings.js"></script>
-</body>
+  </body>
 </html>

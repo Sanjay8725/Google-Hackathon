@@ -1,90 +1,182 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vendors - EventFlow</title>
-    <link rel="stylesheet" href="../../styles/globals.css">
-    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css">
+    <link rel="stylesheet" href="../../styles/globals.css" />
+    <link rel="stylesheet" href="../../styles/OrganizerDashboard.css" />
     <style>
-        .filter-section {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin: 1.25rem 0 1.5rem;
-        }
-        .filter-section .filter-input,
-        .filter-section .filter-select {
-            min-height: 50px;
-            padding: 0 16px;
-        }
-        .filter-section .admin-nav-btn {
-            padding: 14px 32px;
-            font-size: 1rem;
-            border-radius: 10px;
-            font-weight: 700;
-            background: #FFF3E0;
-            color: #D2691E;
-            border: 2px solid #FF8C42;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .filter-section .admin-nav-btn:hover {
-            background: #3498DB;
-            color: #ffffff;
-            border-color: #1ABC9C;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(52, 152, 219, 0.35);
-        }
+      .filter-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 1.25rem 0 1.5rem;
+      }
+      .filter-section .filter-input,
+      .filter-section .filter-select {
+        min-height: 50px;
+        padding: 0 16px;
+      }
+      .filter-section .admin-nav-btn {
+        padding: 14px 32px;
+        font-size: 1rem;
+        border-radius: 10px;
+        font-weight: 700;
+        background: #fff3e0;
+        color: #d2691e;
+        border: 2px solid #ff8c42;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .filter-section .admin-nav-btn:hover {
+        background: #3498db;
+        color: #ffffff;
+        border-color: #1abc9c;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(52, 152, 219, 0.35);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="organizer-dashboard">
-        <header class="dashboard-header">
-            <div class="header-content">
-                <button class="org-menu-toggle" id="orgMenuToggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-                <h1>👥 Vendor Management</h1>
-                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+      <header class="dashboard-header">
+        <div class="header-content">
+          <button
+            class="org-menu-toggle"
+            id="orgMenuToggle"
+            type="button"
+            aria-label="Toggle menu"
+          >
+            <span></span><span></span><span></span>
+          </button>
+          <h1>🎯 Organizer Dashboard</h1>
+          <div class="header-actions">
+            <button
+              class="notification-btn ms-2"
+              onclick="toggleNotifications()"
+              aria-label="Notifications"
+            >
+              🔔
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+          <h4>Vendor Management</h4>
+        </div>
+        <div class="notification-list" id="notificationList">
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('add')"
+          >
+            <div class="notification-icon">➕</div>
+            <div class="notification-content">
+              <p>Add Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
             </div>
-        </header>
-
-    <div class="org-overlay" id="orgOverlay"></div>
-    <div class="dashboard-sidebar" id="orgSidebar">
-            <nav class="sidebar-nav">
-                <div class="nav-item" onclick="goDashboard()">📊 Events</div>
-                <div class="nav-item" onclick="goDashboard('analytics')">📈 Analytics</div>
-                <div class="nav-item" onclick="window.location.href='expense.html'">💸 Expense Tracker</div>
-                <div class="nav-item active">👥 Vendors</div>
-                <div class="nav-item" onclick="window.location.href='settings.html'">⚙️ Settings</div>
-            </nav>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('details')"
+          >
+            <div class="notification-icon">👁️</div>
+            <div class="notification-content">
+              <p>View Vendor Details Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('search')"
+          >
+            <div class="notification-icon">🔍</div>
+            <div class="notification-content">
+              <p>Search Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('assign')"
+          >
+            <div class="notification-icon">🔗</div>
+            <div class="notification-content">
+              <p>Assign Vendor Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
+          <div
+            class="notification-item vendor-option"
+            onclick="generateVendorReport('track')"
+          >
+            <div class="notification-icon">💰</div>
+            <div class="notification-content">
+              <p>Track Vendor Cost Report</p>
+              <span class="notification-time">Generate & Download</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="dashboard-main">
-            <section class="events-section">
-                <h2>Vendor Directory</h2>
-                <div class="filter-section">
-                    <input type="text" class="filter-input" placeholder="Search vendors...">
-                    <select class="filter-select" title="Filter vendors by category">
-                        <option value="">All Categories</option>
-                        <option value="catering">Catering</option>
-                        <option value="audio">Audio/Visual</option>
-                        <option value="venue">Venue</option>
-                        <option value="security">Security</option>
-                    </select>
-                    <button type="button" class="admin-nav-btn">Search</button>
-                </div>
-                <div class="empty-state">
-                    <div class="empty-state-icon">👥</div>
-                    <div class="empty-state-text">Vendor module is ready</div>
-                    <div class="empty-state-subtext">Add vendor data integration when available</div>
-                </div>
-            </section>
-        </div>
+      <div class="org-overlay" id="orgOverlay"></div>
+      <div class="dashboard-sidebar" id="orgSidebar">
+        <nav class="sidebar-nav">
+          <a class="nav-item" href="organizer-dashboard.html">📊 Events</a>
+          <a class="nav-item" href="analytics.html">
+            📈 Analytics
+          </a>
+          <a class="nav-item" href="expense.html">
+            💸 Expense Tracker
+          </a>
+          <a class="nav-item active" href="vendors.html">👥 Vendors</a>
+          <a class="nav-item" href="settings.html">
+            ⚙️ Settings
+          </a>
+          <div class="nav-item logout-nav" onclick="logout()">🚪 Logout</div>
+        </nav>
+      </div>
+
+      <div class="dashboard-main">
+        <section class="events-section">
+          <h2>Vendor Management</h2>
+          <div class="vendor-menu">
+            <div class="vendor-menu-item" onclick="showVendorSection('add')">
+              <div class="menu-icon">➕</div>
+              <div class="menu-text">Add Vendor</div>
+            </div>
+            <div class="vendor-menu-item" onclick="showVendorSection('search')">
+              <div class="menu-icon">🔍</div>
+              <div class="menu-text">Search Vendor</div>
+            </div>
+            <div
+              class="vendor-menu-item"
+              onclick="showVendorSection('details')"
+            >
+              <div class="menu-icon">👁️</div>
+              <div class="menu-text">View Vendor Details</div>
+            </div>
+            <div class="vendor-menu-item" onclick="showVendorSection('assign')">
+              <div class="menu-icon">🔗</div>
+              <div class="menu-text">Assign Vendor to Event</div>
+            </div>
+            <div class="vendor-menu-item" onclick="showVendorSection('track')">
+              <div class="menu-icon">💰</div>
+              <div class="menu-text">Track Vendor Cost</div>
+            </div>
+          </div>
+          <div id="vendorContent" class="vendor-content">
+            <!-- Vendor sections will be loaded here -->
+          </div>
+        </section>
+      </div>
     </div>
 
     <script src="../../js/api.js"></script>
     <script src="../../js/organizer/organizer.js"></script>
     <script src="../../js/organizer/vendors.js"></script>
-</body>
+  </body>
 </html>

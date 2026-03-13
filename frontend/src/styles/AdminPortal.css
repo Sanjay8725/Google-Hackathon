@@ -4,12 +4,12 @@
 
 .admin-portal {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FFFBF0 0%, #FFE8D6 50%, #FFF5E6 100%);
+  background: var(--main-ice-blue);
   padding: 20px;
 }
 
 .admin-header {
-  background: linear-gradient(135deg, #FFFFFF 0%, #FFFBF0 100%);
+  background: var(--card-pure-white);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   padding: 20px 30px;
@@ -18,15 +18,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 8px 32px rgba(255, 140, 66, 0.15);
-  border: 2px solid #3498DB;
+  box-shadow: 0 8px 32px rgba(47, 128, 237, 0.15);
+  border: 2px solid var(--accent-clear-blue);
   flex-wrap: wrap;
   gap: 15px;
 }
 
 .admin-header h1 {
   font-size: 2rem;
-  background: linear-gradient(135deg, #1ABC9C 0%, #8E44AD 100%);
+  background: linear-gradient(135deg, var(--accent-clear-blue) 0%, var(--accent-coral) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -89,9 +89,9 @@
 
 .admin-nav-btn {
   padding: 10px 20px;
-  background: #FFF3E0;
-  color: #D2691E;
-  border: 2px solid #FF8C42;
+  background: #eef5ff;
+  color: var(--text-navy);
+  border: 2px solid var(--accent-clear-blue);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
@@ -100,17 +100,17 @@
 
 .admin-nav-btn:hover {
   transform: translateY(-2px);
-  background: #3498DB;
+  background: var(--accent-clear-blue);
   color: #FFFFFF;
-  border-color: #1ABC9C;
-  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+  border-color: var(--accent-clear-blue);
+  box-shadow: 0 5px 15px rgba(47, 128, 237, 0.4);
 }
 
 .admin-nav-btn.active {
-  background: linear-gradient(135deg, #3498DB, #1ABC9C);
+  background: linear-gradient(135deg, var(--accent-clear-blue), var(--accent-coral));
   color: #FFFFFF;
-  border-color: #1ABC9C;
-  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.6);
+  border-color: var(--accent-clear-blue);
+  box-shadow: 0 5px 15px rgba(47, 128, 237, 0.45);
   font-weight: 800;
 }
 

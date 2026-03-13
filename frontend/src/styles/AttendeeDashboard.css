@@ -1,18 +1,18 @@
 ﻿/* Attendee Dashboard */
 .attendee-dashboard {
-  --att-orange: #FF7F50;
-  --att-teal: #00BFFF;
-  --att-blue: #001F3F;
+  --att-orange: var(--accent-coral);
+  --att-teal: var(--accent-clear-blue);
+  --att-blue: var(--text-navy);
   min-height: 100vh;
-  background: #E0F7FA;
-  color: #000080;
+  background: var(--main-ice-blue);
+  color: var(--text-navy);
 }
 
 /* Dashboard Header */
 .dashboard-header {
   position: sticky;
   top: 0;
-  background: #FFFFFF;
+  background: var(--card-pure-white);
   border-bottom: 2px solid var(--att-teal);
   padding: 1.5rem 2rem;
   z-index: 100;
@@ -67,7 +67,7 @@
   padding: 12px 20px;
   background: transparent;
   border: none;
-  color: #D2691E;
+  color: var(--text-cool-gray);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -80,8 +80,8 @@
 }
 
 .tab.active {
-  color: #FF8C42;
-  border-bottom-color: #FF8C42;
+  color: var(--att-orange);
+  border-bottom-color: var(--att-orange);
 }
 
 /* Tab Content */
@@ -137,21 +137,21 @@
   top: 10px;
   width: 16px;
   height: 16px;
-  background: #3498DB;
+  background: var(--att-teal);
   border: 3px solid #FFFFFF;
   border-radius: 50%;
 }
 
 .event-box {
-  background: #FFFFFF;
-  border: 2px solid #3498DB;
+  background: var(--card-pure-white);
+  border: 2px solid var(--att-teal);
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
 
 .event-box:hover {
-  border-color: #FF8C42;
+  border-color: var(--att-orange);
   box-shadow: 0 10px 30px rgba(255, 140, 66, 0.25);
 }
 
@@ -196,7 +196,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #9ca3af;
+  color: var(--text-cool-gray);
   font-size: 0.9rem;
 }
 
@@ -207,12 +207,12 @@
 
 .sessions-list h4 {
   margin: 0 0 0.75rem 0;
-  color: #9ca3af;
+  color: var(--text-cool-gray);
 }
 
 .session-item {
   padding: 0.5rem 0;
-  color: #e5e7eb;
+  color: var(--text-navy);
   font-size: 0.9rem;
 }
 
