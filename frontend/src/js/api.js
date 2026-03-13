@@ -263,6 +263,13 @@ const api = {
     });
   },
 
+  async createEventAdmin(data) {
+    return await apiFetch(`${API_BASE_URL}/admin/events`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   async updateEventAdmin(eventId, updates) {
     return await apiFetch(`${API_BASE_URL}/admin/events/${eventId}`, {
       method: 'PUT',

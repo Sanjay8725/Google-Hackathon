@@ -19,6 +19,7 @@ const CREDENTIAL_TABLE_BY_ROLE = {
   organizer: 'organizer_credentials',
   attendee: 'attendee_credentials'
 };
+const EVENT_STATUSES = new Set(['Planning', 'Upcoming', 'Live', 'Completed', 'Cancelled']);
 
 const adminSettingsStore = {
   platform: {
@@ -669,6 +670,87 @@ exports.searchEvents = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to search events'
+    });
+  }
+};
+
+// Create event from admin portal
+exports.createEvent = async (req, res) => {
+  try {
+    const {
+      organizer_id,
+      title,
+      description,
+      date,
+      time,
+      location,
+      status,
+      capacity,
+      category
+    } = req.body;
+
+    const normalizedTitle = String(title || '').trim();
+    const normalizedDate = String(date || '').trim();
+    const normalizedCategory = String(category || '').trim();
+    const organizerId = Number(organizer_id);
+    const normalizedStatus = EVENT_STATUSES.has(String(status || '').trim())
+      ? String(status).trim()
+      : 'Planning';
+
+    if (!organizerId || !normalizedTitle || !normalizedDate || !normalizedCategory) {
+      return res.status(400).json({
+        success: false,
+        message: 'Organizer, title, date, and category are required'
+      });
+    }
+
+    const [organizerRows] = await db.query(
+      'SELECT id, role FROM users WHERE id = ? LIMIT 1',
+      [organizerId]
+    );
+
+    if (organizerRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Organizer account not found'
+      });
+    }
+
+    const ownerRole = String(organizerRows[0].role || '').toLowerCase();
+    if (!['organizer', 'admin'].includes(ownerRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Selected user cannot own an event'
+      });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO events
+      (organizer_id, title, description, date, time, location, status, capacity, category)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        organizerId,
+        normalizedTitle,
+        String(description || '').trim(),
+        normalizedDate,
+        String(time || '').trim(),
+        String(location || '').trim(),
+        normalizedStatus,
+        Number(capacity || 0),
+        normalizedCategory
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      eventId: result.insertId
+    });
+  } catch (error) {
+    console.error('Admin create event error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create event'
     });
   }
 };

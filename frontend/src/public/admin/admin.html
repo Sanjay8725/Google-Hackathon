@@ -15,12 +15,15 @@
             <button class="nav-link" type="button" data-admin-section="organizers">Manage Organizers</button>
             <button class="nav-link" type="button" data-admin-section="events">Manage Events</button>
             <button class="nav-link" type="button" data-admin-section="users">Manage Users</button>
-            <button class="nav-link" type="button" data-admin-section="registrations">Registrations</button>
             <button class="nav-link" type="button" data-admin-section="notifications">Notifications</button>
             <button class="nav-link" type="button" data-admin-section="analytics">Analytics</button>
             <button class="nav-link" type="button" data-admin-section="reports">Reports</button>
             <button class="nav-link" type="button" data-admin-section="feedback">Feedback</button>
             <button class="nav-link" type="button" data-admin-section="settings">Admin Settings</button>
+            <div class="sidebar-bottom">
+                <span id="currentAdminLabel" class="pill">Admin</span>
+                <button class="btn btn-danger" type="button" id="logoutButton">Logout</button>
+            </div>
         </aside>
 
         <main class="admin-main">
@@ -33,10 +36,6 @@
                 <div>
                     <h1>Admin Portal</h1>
                     <p id="topbarSubtext">Seamless event management and control center</p>
-                </div>
-                <div class="topbar-actions">
-                    <span id="currentAdminLabel" class="pill">Admin</span>
-                    <button class="btn btn-danger" type="button" id="logoutButton">Logout</button>
                 </div>
             </header>
             <div class="admin-overlay" id="adminOverlay"></div>
@@ -111,6 +110,7 @@
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
+                        <button class="btn btn-secondary" id="addEventButton" type="button">Add Event</button>
                         <button class="btn btn-primary" id="searchEventsButton" type="button">Search</button>
                     </div>
                     <div class="table-wrap">
@@ -143,25 +143,7 @@
                     </div>
                 </article>
             </section>
-
-            <section id="registrations-section" class="admin-section is-hidden">
-                <article class="panel">
-                    <h2>Registration Management</h2>
-                    <div class="toolbar">
-                        <select id="registrationEventFilter" class="input" title="Filter registrations by event"></select>
-                        <input id="registrationSearch" class="input" placeholder="Search attendee or event">
-                        <button class="btn btn-primary" id="loadRegistrationsButton" type="button">Load</button>
-                        <button class="btn btn-secondary" id="exportRegistrationsButton" type="button">Export CSV</button>
-                    </div>
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead><tr><th>Event</th><th>Attendee</th><th>Email</th><th>Ticket</th><th>Date</th></tr></thead>
-                            <tbody id="registrationsTableBody"></tbody>
-                        </table>
-                    </div>
-                </article>
-            </section>
-
+            
             <section id="notifications-section" class="admin-section is-hidden">
                 <article class="panel">
                     <h2>Send Notifications</h2>
