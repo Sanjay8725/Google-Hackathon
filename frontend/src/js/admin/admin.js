@@ -16,6 +16,7 @@
     analytics: null,
     modalSaveHandler: null
   };
+  const EVENT_STATUSES = ['Planning', 'Upcoming', 'Live', 'Completed', 'Cancelled'];
 
   function byId(id) {
     return document.getElementById(id);
@@ -43,6 +44,10 @@
 
   function statusPill(value) {
     return `<span class="pill">${escapeHtml(value || '-')}</span>`;
+  }
+
+  function normalizeEventStatus(value) {
+    return EVENT_STATUSES.includes(value) ? value : 'Planning';
   }
 
   function showMessage(id, text, isError) {
@@ -80,7 +85,6 @@
     if (section === 'organizers') loadOrganizers();
     if (section === 'events') loadEvents();
     if (section === 'users') loadUsers();
-    if (section === 'registrations') loadRegistrations();
     if (section === 'analytics') loadAnalytics();
     if (section === 'feedback') loadFeedback();
     if (section === 'settings') loadSettings();
@@ -121,7 +125,7 @@
     });
   }
 
-  function openModal(title, fields, onSave) {
+  function openModal(title, fields, onSave, saveLabel) {
     byId('modalTitle').textContent = title;
     const form = byId('modalForm');
     form.innerHTML = fields
@@ -148,6 +152,7 @@
       .join('');
 
     state.modalSaveHandler = onSave;
+    byId('saveModalButton').textContent = saveLabel || 'Save';
     byId('editModal').classList.remove('is-hidden');
   }
 
@@ -155,6 +160,57 @@
     byId('editModal').classList.add('is-hidden');
     byId('modalForm').innerHTML = '';
     state.modalSaveHandler = null;
+    byId('saveModalButton').textContent = 'Save';
+  }
+
+  function openCreateEventModal() {
+    openModal(
+      'Add Event',
+      [
+        { name: 'title', label: 'Title' },
+        { name: 'date', label: 'Date', type: 'date' },
+        {
+          name: 'status',
+          label: 'Status',
+          type: 'select',
+          value: 'Planning',
+          options: EVENT_STATUSES.map(function (item) {
+            return { value: item, label: item };
+          })
+        },
+        { name: 'category', label: 'Category' },
+        { name: 'capacity', label: 'Capacity', type: 'number', value: 0 },
+        { name: 'location', label: 'Location' },
+        { name: 'description', label: 'Description' }
+      ],
+      async function (values) {
+        const payload = {
+          organizer_id: user.id,
+          title: String(values.title || '').trim(),
+          date: values.date,
+          status: normalizeEventStatus(values.status),
+          category: String(values.category || '').trim(),
+          capacity: Number(values.capacity || 0),
+          location: String(values.location || '').trim(),
+          description: String(values.description || '').trim()
+        };
+
+        if (!payload.title || !payload.date || !payload.category) {
+          alert('Please provide title, date, and category.');
+          return;
+        }
+
+        const result = await window.api.createEventAdmin(payload);
+        if (!result || !result.success) {
+          alert((result && result.message) || 'Failed to create event.');
+          return;
+        }
+
+        closeModal();
+        loadEvents();
+      },
+      'Save Event'
+    );
   }
 
   async function loadDashboard() {
@@ -185,7 +241,7 @@
           return `
             <tr>
               <td>${escapeHtml(event.title)}</td>
-              <td>${statusPill(event.status)}</td>
+              <td>${statusPill(normalizeEventStatus(event.status))}</td>
               <td>${escapeHtml(fmtDate(event.date))}</td>
               <td>${escapeHtml(event.organizer_name)}</td>
             </tr>
@@ -365,61 +421,6 @@
     );
   }
 
-  async function loadRegistrationEventFilter() {
-    const result = await window.api.getAdminEvents({ limit: 200 });
-    const events = result && result.success ? result.events : [];
-    const select = byId('registrationEventFilter');
-    select.innerHTML = '<option value="">All events</option>' + events
-      .map(function (event) {
-        return `<option value="${event.id}">${escapeHtml(event.title)}</option>`;
-      })
-      .join('');
-  }
-
-  async function loadRegistrations() {
-    const search = byId('registrationSearch').value.trim();
-    const eventId = byId('registrationEventFilter').value;
-    const result = await window.api.getRegistrationsAdmin({ search: search, eventId: eventId, limit: 200 });
-    const registrations = result && result.success ? result.registrations : [];
-    state.registrations = registrations;
-
-    renderBodyRows(
-      'registrationsTableBody',
-      registrations
-        .map(function (registration) {
-          return `
-            <tr>
-              <td>${escapeHtml(registration.event_title)}</td>
-              <td>${escapeHtml(registration.attendee_name)}</td>
-              <td>${escapeHtml(registration.attendee_email)}</td>
-              <td>${escapeHtml(registration.ticket_type || 'General')}</td>
-              <td>${escapeHtml(fmtDate(registration.registration_date))}</td>
-            </tr>
-          `;
-        })
-        .join('')
-    );
-  }
-
-  async function exportRegistrations() {
-    const eventId = byId('registrationEventFilter').value;
-    const exportResult = await window.api.exportRegistrationsAdmin({ eventId: eventId });
-    if (!exportResult || !exportResult.success) {
-      alert((exportResult && exportResult.message) || 'Failed to export registrations');
-      return;
-    }
-
-    const blob = new Blob([exportResult.csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'registrations-' + (eventId || 'all') + '.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
   async function sendAnnouncement(event) {
     event.preventDefault();
     const title = byId('announcementTitle').value.trim();
@@ -597,23 +598,21 @@
             name: 'status',
             label: 'Status',
             type: 'select',
-            value: eventData.status,
-            options: [
-              { value: 'Planning', label: 'Planning' },
-              { value: 'Upcoming', label: 'Upcoming' },
-              { value: 'Live', label: 'Live' },
-              { value: 'Completed', label: 'Completed' },
-              { value: 'Cancelled', label: 'Cancelled' }
-            ]
+            value: normalizeEventStatus(eventData.status),
+            options: EVENT_STATUSES.map(function (item) {
+              return { value: item, label: item };
+            })
           },
           { name: 'category', label: 'Category', value: eventData.category || '' },
           { name: 'capacity', label: 'Capacity', type: 'number', value: eventData.capacity || 0 }
         ],
         async function (values) {
+          values.status = normalizeEventStatus(values.status);
           await window.api.updateEventAdmin(id, values);
           closeModal();
           loadEvents();
-        }
+        },
+        'Save Event'
       );
       return;
     }
@@ -694,17 +693,21 @@
       });
     });
 
-    byId('logoutButton').addEventListener('click', function () {
+    function doLogout() {
       localStorage.removeItem('user');
       window.location.href = '../index.html';
-    });
+    }
+
+    const logoutButton = byId('logoutButton');
+    if (logoutButton) {
+      logoutButton.addEventListener('click', doLogout);
+    }
 
     byId('searchEventsButton').addEventListener('click', loadEvents);
+    byId('addEventButton').addEventListener('click', openCreateEventModal);
     byId('searchUsersButton').addEventListener('click', loadUsers);
     byId('createOrganizerButton').addEventListener('click', openCreateOrganizerModal);
     byId('refreshOrganizersButton').addEventListener('click', loadOrganizers);
-    byId('loadRegistrationsButton').addEventListener('click', loadRegistrations);
-    byId('exportRegistrationsButton').addEventListener('click', exportRegistrations);
     byId('loadFeedbackButton').addEventListener('click', loadFeedback);
     byId('generateReportButton').addEventListener('click', generateReport);
     byId('saveSettingsButton').addEventListener('click', saveSettings);
@@ -761,7 +764,6 @@
     }
 
     setupEventBindings();
-    await loadRegistrationEventFilter();
     switchSection('dashboard');
   }
 

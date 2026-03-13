@@ -32,6 +32,9 @@ router.get('/events', adminController.getAllEvents);
 // GET /api/admin/events/search?q=keyword - Search events
 router.get('/events/search', adminController.searchEvents);
 
+// POST /api/admin/events - Create event from admin portal
+router.post('/events', adminController.createEvent);
+
 // PUT /api/admin/events/:id/approve - Approve event
 router.put('/events/:id/approve', adminController.approveEvent);
 

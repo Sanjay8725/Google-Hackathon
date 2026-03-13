@@ -546,6 +546,15 @@
   align-items: end;
 }
 
+/* Keep Bootstrap row/col behavior for organizer forms when row class is present */
+.event-register-form.row {
+  display: flex;
+}
+
+.event-register-form.row > [class*="col-"] {
+  margin-bottom: 0;
+}
+
 .event-register-form .field label {
   display: block;
   margin-bottom: 0.35rem;
@@ -1101,8 +1110,17 @@
     margin-top: 120px;
     width: 100%;
     max-width: 100%;
-    padding: 1rem;
+    padding: 0.85rem 0.75rem 1rem;
     background: linear-gradient(135deg, #F0F9F9 0%, #F5FBFA 100%);
+  }
+
+  .event-register-card {
+    padding: 0.85rem;
+  }
+
+  .event-register-form.row > [class*="col-"] {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
   }
 
   .events-grid {
@@ -1159,7 +1177,17 @@
 
   .dashboard-main {
     margin-top: 108px;
-    padding: 0.75rem 0.5rem;
+    padding: 0.7rem 0.45rem;
+  }
+
+  .event-register-card {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .event-register-form.row > [class*="col-"] {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
   }
 
   .quick-stats {
