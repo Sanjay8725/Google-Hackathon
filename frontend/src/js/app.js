@@ -365,7 +365,7 @@ async function handleAuth(e) {
     let result;
     if (isLoginMode) {
       // LOGIN
-      result = await window.api.login({ email, password });
+            result = await window.api.login({ usernameOrEmail: email, password, role: appState.userRole });
       if (result.success) {
         appState.isLoggedIn = true;
         appState.user = result.user;
