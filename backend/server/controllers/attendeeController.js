@@ -23,14 +23,16 @@ function isEducationalEvent(category, subCategory) {
 
 async function isCertificateTemplateEnabled() {
   try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS platform_settings (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        setting_key VARCHAR(150) NOT NULL UNIQUE,
-        setting_value TEXT NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
+    if (!(typeof db.isSupabase === 'function' && db.isSupabase())) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS platform_settings (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          setting_key VARCHAR(150) NOT NULL UNIQUE,
+          setting_value TEXT NOT NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+    }
 
     const [rows] = await db.query(
       'SELECT setting_value FROM platform_settings WHERE setting_key = ? LIMIT 1',

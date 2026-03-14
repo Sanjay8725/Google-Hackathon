@@ -227,3 +227,20 @@ INSERT IGNORE INTO users (id, name, username, email, role) VALUES
 
 -- Note: credentials are intentionally not inserted here.
 -- Use your application registration flow or hashed values from setup scripts.
+-- =========================
+-- Supabase Auth Integration
+-- =========================
+
+-- Supabase uses its own auth schema (auth.users) for authentication.
+-- To integrate, you may want to sync your users table with Supabase auth.users.
+-- Example: Add a column to store the Supabase user UUID.
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS supabase_uid UUID UNIQUE;
+
+-- Optionally, create a trigger to sync new users to your users table
+-- when they register via Supabase Auth (requires PostgreSQL functions).
+
+-- Example: Insert a test Supabase user reference (replace with real UUIDs in production)
+-- INSERT INTO users (name, username, email, role, supabase_uid)
+-- VALUES ('Supabase Admin', 'supabase_admin', 'supabase_admin@eventflow.com', 'admin', '00000000-0000-0000-0000-000000000000');

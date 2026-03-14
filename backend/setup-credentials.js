@@ -10,9 +10,9 @@ dotenv.config();
 
 let bcrypt;
 try {
-  bcrypt = require('bcrypt');
-} catch (err) {
-  console.warn('⚠️ Bcrypt native module not available, using fallback hashing');
+  bcrypt = require('bcryptjs');
+} catch (_e1) {
+  console.warn('⚠️ bcryptjs not available, using fallback hashing');
   bcrypt = {
     hash: (password) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex')),
     compare: (password, hash) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex') === hash)

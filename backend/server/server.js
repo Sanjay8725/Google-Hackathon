@@ -3,10 +3,11 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const http = require('http');
-const db = require('./config/database');
 
 // Load environment variables
 dotenv.config();
+
+const db = require('./config/database');
 
 const app = express();
 

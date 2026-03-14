@@ -7,6 +7,11 @@ async function ensureExpenseTable() {
     return;
   }
 
+  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
+    expenseTableEnsured = true;
+    return;
+  }
+
   await db.query(`
     CREATE TABLE IF NOT EXISTS event_expenses (
       id INT PRIMARY KEY AUTO_INCREMENT,

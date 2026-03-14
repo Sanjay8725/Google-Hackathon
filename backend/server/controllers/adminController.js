@@ -3,10 +3,9 @@ const db = require('../config/database');
 
 let bcrypt;
 try {
-  bcrypt = require('bcrypt');
-} catch (err) {
-  console.warn('⚠️ Bcrypt native module not available, using fallback hashing');
-  // Fallback if bcrypt .so files are missing
+  bcrypt = require('bcryptjs');
+} catch (_e1) {
+  console.warn('⚠️ bcryptjs not available, using fallback hashing');
   bcrypt = {
     hash: (password) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex')),
     compare: (password, hash) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex') === hash)
@@ -49,6 +48,11 @@ async function ensureAnnouncementsTable() {
     return;
   }
 
+  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
+    announcementsTableEnsured = true;
+    return;
+  }
+
   await db.query(`
     CREATE TABLE IF NOT EXISTS announcements (
       id INT PRIMARY KEY AUTO_INCREMENT,
@@ -65,6 +69,11 @@ async function ensureAnnouncementsTable() {
 
 async function ensurePlatformSettingsTable() {
   if (platformSettingsTableEnsured) {
+    return;
+  }
+
+  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
+    platformSettingsTableEnsured = true;
     return;
   }
 
