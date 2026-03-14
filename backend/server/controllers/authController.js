@@ -20,6 +20,99 @@ const CREDENTIAL_TABLE_BY_ROLE = {
   attendee: 'attendee_credentials'
 };
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+function isSupabaseAuthEnabled() {
+  const provider = String(process.env.AUTH_PROVIDER || process.env.DB_PROVIDER || '').toLowerCase();
+  return provider === 'supabase' && Boolean(SUPABASE_URL) && Boolean(SUPABASE_ANON_KEY);
+}
+
+function usernameFromEmail(email) {
+  return String(email || '')
+    .split('@')[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 30) || `user_${Date.now()}`;
+}
+
+async function supabaseAuthRequest(path, body) {
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify(body)
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_err) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload && (payload.msg || payload.message || payload.error_description || payload.error);
+    throw new Error(message || `Supabase auth failed (${response.status})`);
+  }
+
+  return payload;
+}
+
+async function findOrCreateLocalUserFromSupabase({ role, email, name, username, supabaseUid }) {
+  try {
+    const [existingByUid] = await db.query(
+      'SELECT id, name, username, email, role FROM users WHERE supabase_uid = ? LIMIT 1',
+      [supabaseUid]
+    );
+
+    if (existingByUid.length > 0) {
+      return existingByUid[0];
+    }
+
+    const [existingByEmail] = await db.query(
+      'SELECT id, name, username, email, role FROM users WHERE email = ? LIMIT 1',
+      [email]
+    );
+
+    if (existingByEmail.length > 0) {
+      await db.query('UPDATE users SET supabase_uid = ? WHERE id = ?', [supabaseUid, existingByEmail[0].id]);
+      return {
+        ...existingByEmail[0],
+        role: existingByEmail[0].role || role
+      };
+    }
+
+    const safeUsername = username || usernameFromEmail(email);
+    const safeName = name || safeUsername;
+
+    const [insertResult] = await db.query(
+      'INSERT INTO users (name, username, email, role, supabase_uid) VALUES (?, ?, ?, ?, ?)',
+      [safeName, safeUsername, email, role, supabaseUid]
+    );
+
+    return {
+      id: insertResult.insertId || supabaseUid,
+      name: safeName,
+      username: safeUsername,
+      email,
+      role
+    };
+  } catch (_err) {
+    // If DB is unavailable, still allow auth success from Supabase cloud.
+    return {
+      id: supabaseUid,
+      name: name || usernameFromEmail(email),
+      username: username || usernameFromEmail(email),
+      email,
+      role
+    };
+  }
+}
+
 function getCredentialsTable(role) {
   if (!VALID_ROLES.has(role)) {
     return null;
@@ -53,6 +146,47 @@ exports.register = async (req, res) => {
       success: false,
       message: 'Sign up is available only for attendee accounts. Please contact admin.'
     });
+  }
+
+  if (isSupabaseAuthEnabled()) {
+    try {
+      const signup = await supabaseAuthRequest('/auth/v1/signup', {
+        email,
+        password,
+        data: {
+          name,
+          username,
+          role: safeRole
+        }
+      });
+
+      const supabaseUser = signup && signup.user;
+      if (!supabaseUser || !supabaseUser.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Supabase signup did not return a user. Check email confirmation settings.'
+        });
+      }
+
+      const appUser = await findOrCreateLocalUserFromSupabase({
+        role: safeRole,
+        email,
+        name,
+        username,
+        supabaseUid: supabaseUser.id
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        user: appUser
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Supabase signup failed'
+      });
+    }
   }
 
   try {
@@ -185,6 +319,81 @@ async function loginByRole(req, res, role) {
       success: false,
       message: 'Invalid role'
     });
+  }
+
+  if (isSupabaseAuthEnabled()) {
+    try {
+      let loginEmail = String(usernameOrEmail).trim();
+      const usingEmail = loginEmail.includes('@');
+
+      if (!usingEmail) {
+        try {
+          const [rows] = await db.query(
+            'SELECT email FROM users WHERE username = ? AND role = ? LIMIT 1',
+            [loginEmail, role]
+          );
+
+          if (rows.length > 0) {
+            loginEmail = rows[0].email;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'Please login with email for this account.'
+            });
+          }
+        } catch (_err) {
+          return res.status(400).json({
+            success: false,
+            message: 'Please login with email when database lookup is unavailable.'
+          });
+        }
+      }
+
+      const tokenPayload = await supabaseAuthRequest('/auth/v1/token?grant_type=password', {
+        email: loginEmail,
+        password
+      });
+
+      const supabaseUser = tokenPayload && tokenPayload.user;
+      if (!supabaseUser || !supabaseUser.id) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      const metadataRole =
+        (supabaseUser.user_metadata && supabaseUser.user_metadata.role) ||
+        (supabaseUser.app_metadata && supabaseUser.app_metadata.role) ||
+        role;
+
+      if (String(metadataRole) !== String(role)) {
+        // Role-specific endpoint guard.
+        return res.status(403).json({
+          success: false,
+          message: `Use the ${metadataRole} login role for this account`
+        });
+      }
+
+      const appUser = await findOrCreateLocalUserFromSupabase({
+        role,
+        email: supabaseUser.email,
+        name: (supabaseUser.user_metadata && supabaseUser.user_metadata.name) || null,
+        username: (supabaseUser.user_metadata && supabaseUser.user_metadata.username) || null,
+        supabaseUid: supabaseUser.id
+      });
+
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        user: appUser
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: error.message || 'Invalid credentials'
+      });
+    }
   }
 
   try {
