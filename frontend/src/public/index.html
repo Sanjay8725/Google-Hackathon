@@ -13,7 +13,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">🎯 EventFlow</div>
-            <button class="nav-btn" onclick="goToAuth()">Get Started</button>
+            <a class="nav-btn" href="auth.html">Get Started</a>
         </div>
     </nav>
 
@@ -34,8 +34,8 @@
             </div>
 
             <div class="hero-buttons">
-                <button class="btn btn-primary" onclick="goToAuth('organizer')">Start as Organizer</button>
-                <button class="btn btn-secondary" onclick="goToAuth('attendee')">Find Events</button>
+                <a class="btn btn-primary" href="auth.html?role=organizer">Start as Organizer</a>
+                <a class="btn btn-secondary" href="auth.html?role=attendee">Find Events</a>
             </div>
         </div>
     </section>
@@ -82,7 +82,7 @@
     <section class="cta-section">
         <div class="cta-content">
             <h2>Ready to Transform Event Management?</h2>
-            <button class="btn btn-large" onclick="goToAuth()">Get Started Now</button>
+            <a class="btn btn-large" href="auth.html">Get Started Now</a>
         </div>
     </section>
 
@@ -91,6 +91,5 @@
         <p>&copy; 2026 EventFlow. All rights reserved.</p>
     </footer>
 
-    <script type="module" src="../js/home.js"></script>
 </body>
 </html>

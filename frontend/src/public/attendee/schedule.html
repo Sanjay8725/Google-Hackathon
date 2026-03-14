@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Schedule - EventFlow</title>
+    <link rel="stylesheet" href="../../styles/globals.css">
     <link rel="stylesheet" href="../../styles/AttendeeDashboard.css">
     <link rel="stylesheet" href="../../styles/schedule.css">
 </head>
 <body class="schedule-page">
     <div class="container">
-        <a class="back-link" onclick="goBack()">← Back to Dashboard</a>
+        <a class="back-link" href="attendee-dashboard.html">← Back to Dashboard</a>
         <section class="schedule-hero">
             <div class="schedule-header">
                 <div>
@@ -17,7 +18,7 @@
                     <h2>📅 My Schedule</h2>
                     <p class="schedule-subtitle">Track your registered events, review timings, and access QR passes, feedback, and event details from one place.</p>
                 </div>
-                <button type="button" class="logout-btn" onclick="logout()">🚪 Logout</button>
+                <a class="logout-btn" href="../index.html">🚪 Logout</a>
             </div>
 
             <div class="schedule-summary" id="scheduleSummary">

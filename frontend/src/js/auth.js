@@ -204,6 +204,12 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    const urlRole = new URLSearchParams(window.location.search).get('role');
+    if (urlRole && ['admin', 'organizer', 'attendee'].includes(urlRole)) {
+      selectedRole = urlRole;
+      localStorage.setItem('selectedRole', urlRole);
+    }
+
     const savedRole = localStorage.getItem('selectedRole');
     if (savedRole) {
       selectedRole = savedRole;
