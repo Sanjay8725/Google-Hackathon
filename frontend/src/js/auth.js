@@ -6,6 +6,7 @@
   function setMessage(message, isError) {
     const msg = document.getElementById('authMessage');
     if (!msg) return;
+    msg.classList.remove('hidden');
     msg.style.display = 'block';
     msg.textContent = message;
     msg.style.color = isError ? '#ef4444' : '#10b981';
@@ -14,6 +15,7 @@
   function clearMessage() {
     const msg = document.getElementById('authMessage');
     if (!msg) return;
+    msg.classList.add('hidden');
     msg.style.display = 'none';
     msg.textContent = '';
   }
