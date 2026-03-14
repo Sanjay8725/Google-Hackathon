@@ -182,10 +182,7 @@ exports.register = async (req, res) => {
         user: appUser
       });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message || 'Supabase signup failed'
-      });
+      console.warn('⚠️ Supabase signup failed, falling back to local registration:', error.message);
     }
   }
 
@@ -389,10 +386,7 @@ async function loginByRole(req, res, role) {
         user: appUser
       });
     } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: error.message || 'Invalid credentials'
-      });
+      console.warn('⚠️ Supabase login failed, falling back to local login:', error.message);
     }
   }
 
