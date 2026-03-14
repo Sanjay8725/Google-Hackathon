@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const http = require('http');
+const db = require('./config/database');
 
 // Load environment variables
 dotenv.config();
@@ -89,8 +90,15 @@ app.use('/api', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+app.get('/api/health', async (req, res) => {
+  const dbState = await db.checkConnection();
+
+  res.json({
+    status: dbState.connected ? 'ok' : 'degraded',
+    message: dbState.connected ? 'Server and database are running' : 'Server is running; database is unavailable',
+    database: dbState,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling middleware
