@@ -1,4 +1,26 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/auth",
+      "destination": "/auth.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin/admin.html"
+    },
+    {
+      "source": "/organizer",
+      "destination": "/organizer/organizer-dashboard.html"
+    },
+    {
+      "source": "/attendee",
+      "destination": "/attendee/attendee-dashboard.html"
+    },
+    {
+      "source": "/schedule",
+      "destination": "/attendee/schedule.html"
+    }
+  ]
 }

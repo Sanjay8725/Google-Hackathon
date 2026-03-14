@@ -1195,16 +1195,16 @@ async function loadAttendeePage(pageType) {
 
             function logout() {
                 localStorage.removeItem('user');
-                window.location.href = '/';
+                window.location.href = 'index.html';
             }
 
             // Expose for navigation
             window.navigateTo = function(page) {
                 if (page === 'attendee-dashboard') {
-                    window.location.href = '/';
+                    window.location.href = 'index.html';
                     setTimeout(() => appState.currentPage = 'attendee-dashboard', 100);
                 } else {
-                    window.location.href = '/?page=' + page;
+                    window.location.href = 'index.html?page=' + page;
                 }
             };
 

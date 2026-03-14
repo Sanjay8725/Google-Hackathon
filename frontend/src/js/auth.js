@@ -185,13 +185,13 @@
       setTimeout(() => {
         if (user.role === 'admin') {
           console.log('➡️ Redirecting to admin dashboard');
-          window.location.href = '/admin/admin.html';
+          window.location.href = 'admin/admin.html';
         } else if (user.role === 'organizer') {
           console.log('➡️ Redirecting to organizer dashboard');
-          window.location.href = '/organizer/organizer-dashboard.html';
+          window.location.href = 'organizer/organizer-dashboard.html';
         } else if (user.role === 'attendee') {
           console.log('➡️ Redirecting to attendee dashboard');
-          window.location.href = '/attendee/attendee-dashboard.html';
+          window.location.href = 'attendee/attendee-dashboard.html';
         } else {
           console.error('❌ Unknown role:', user.role);
           setMessage('Unknown user role. Please contact support.', true);
