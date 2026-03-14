@@ -156,19 +156,27 @@ async function getConnection() {
   };
 }
 
-checkConnection()
-  .then((state) => {
-    if (state.connected) {
-      console.log(`✅ ${useSupabase ? 'Supabase(Postgres)' : 'MySQL'} Database connected successfully`);
-      return;
-    }
+if (String(process.env.DB_STARTUP_CHECK || 'true').toLowerCase() !== 'false') {
+  checkConnection()
+    .then((state) => {
+      if (state.connected) {
+        console.log(`✅ ${useSupabase ? 'Supabase(Postgres)' : 'MySQL'} Database connected successfully`);
+        return;
+      }
 
-    console.warn(`⚠️  ${useSupabase ? 'Supabase' : 'MySQL'} connection warning:`, state.error);
-    console.warn('    API will work with mock data. Real DB operations will fail.');
-  })
-  .catch(() => {
-    // This catch is only for unexpected failures in the connection check flow.
-  });
+      if (useSupabase) {
+        console.warn(`⚠️  Supabase database not reachable at startup: ${state.error}`);
+        console.warn('    App continues in fallback mode. Set a Pooler/IPv4 SUPABASE_DB_URL to remove this warning.');
+        return;
+      }
+
+      console.warn(`⚠️  MySQL connection warning: ${state.error}`);
+      console.warn('    API will work with mock data. Real DB operations will fail.');
+    })
+    .catch(() => {
+      // This catch is only for unexpected failures in the connection check flow.
+    });
+}
 
 const database = useSupabase ? pgPool : mysqlPool;
 

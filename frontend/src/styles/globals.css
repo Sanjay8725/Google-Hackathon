@@ -19,8 +19,8 @@
   --primary: var(--accent-clear-blue);
   --primary-dark: #1f6fd6;
   --secondary: var(--accent-coral);
-  --bg-dark: var(--main-ice-blue);
-  --bg-card: var(--card-pure-white);
+  --bg-dark: var(--wave-blue);
+  --bg-card: var(--card-purpule-blue);
   --text-light: var(--text-navy);
   --text-muted: var(--text-cool-gray);
   --accent: var(--accent-coral);

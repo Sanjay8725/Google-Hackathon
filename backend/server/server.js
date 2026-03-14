@@ -82,14 +82,6 @@ app.get('/attendee-module/qrcode', (req, res) => {
   });
 });
 
-// 404 handler for undefined API routes
-app.use('/api', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `Endpoint not found: ${req.method} ${req.originalUrl}` 
-  });
-});
-
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   const dbState = await db.checkConnection();
@@ -99,6 +91,14 @@ app.get('/api/health', async (req, res) => {
     message: dbState.connected ? 'Server and database are running' : 'Server is running; database is unavailable',
     database: dbState,
     timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler for undefined API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: `Endpoint not found: ${req.method} ${req.originalUrl}` 
   });
 });
 
