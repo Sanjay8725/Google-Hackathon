@@ -1,24 +1,23 @@
--- Supabase/Postgres seed data for Seamless Event Management
--- Run this after 01_schema.sql
+-- Optional seed data for Supabase
 
-begin;
-
-insert into users (id, name, username, email, role)
+insert into users (name, username, email, role, organizer_status, password_hash)
 values
-  (1, 'Admin User', 'admin', 'admin@eventflow.com', 'admin'),
-  (2, 'Organizer User', 'organizer', 'organizer@eventflow.com', 'organizer'),
-  (3, 'Attendee User', 'attendee', 'attendee@eventflow.com', 'attendee')
-on conflict (id) do nothing;
+  ('Admin User', 'admin', 'admin@example.com', 'admin', 'active', '$2a$10$dummyhashdummyhashdummyhashdummyhashdummyhashdummyhashdum'),
+  ('Organizer User', 'organizer1', 'organizer1@example.com', 'organizer', 'active', '$2a$10$dummyhashdummyhashdummyhashdummyhashdummyhashdummyhashdum'),
+  ('Attendee User', 'attendee1', 'attendee1@example.com', 'attendee', 'active', '$2a$10$dummyhashdummyhashdummyhashdummyhashdummyhashdummyhashdum')
+on conflict (email) do nothing;
 
--- Keep identity sequences in sync after explicit ids.
-select setval(pg_get_serial_sequence('users', 'id'), (select coalesce(max(id), 1) from users), true);
-
--- Optional default app settings used by admin/attendee modules.
-insert into platform_settings (setting_key, setting_value)
-values
-  ('certificate_templates_enabled', 'true'),
-  ('maintenance_mode', 'false'),
-  ('registration_approval_required', 'false')
-on conflict (setting_key) do update set setting_value = excluded.setting_value;
-
-commit;
+insert into events (title, description, date, time, location, category, venue_type, status, approved, capacity, organizer_id)
+select
+  'Sample Tech Meetup',
+  'Sample event for local testing',
+  current_date + interval '7 day',
+  '10:00',
+  'Main Hall',
+  'Technology',
+  'In-Person',
+  'Upcoming',
+  true,
+  200,
+  (select id from users where role = 'organizer' order by id asc limit 1)
+where not exists (select 1 from events where title = 'Sample Tech Meetup');

@@ -1,1352 +1,412 @@
-const crypto = require('crypto');
-const db = require('../config/database');
+const bcrypt = require('bcryptjs');
+const { supabaseAdmin } = require('../config/supabase');
 
-let bcrypt;
-try {
-  bcrypt = require('bcryptjs');
-} catch (_e1) {
-  console.warn('⚠️ bcryptjs not available, using fallback hashing');
-  bcrypt = {
-    hash: (password) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex')),
-    compare: (password, hash) => Promise.resolve(crypto.createHash('sha256').update(password).digest('hex') === hash)
-  };
+function toInt(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-const VALID_ROLES = new Set(['admin', 'organizer', 'attendee']);
-const CREDENTIAL_TABLE_BY_ROLE = {
-  admin: 'admin_credentials',
-  organizer: 'organizer_credentials',
-  attendee: 'attendee_credentials'
-};
-const EVENT_STATUSES = new Set(['Planning', 'Upcoming', 'Live', 'Completed', 'Cancelled']);
-
-function isDatabaseUnavailableError(error) {
-  const code = String((error && error.code) || '').toUpperCase();
-  return code === 'ECONNREFUSED' || code === 'PROTOCOL_CONNECTION_LOST' || code === 'ETIMEDOUT';
-}
-
-const adminSettingsStore = {
-  platform: {
-    maintenanceMode: false,
-    registrationApprovalRequired: false,
-    defaultTimezone: 'UTC'
-  },
-  security: {
-    enforceStrongPasswords: true,
-    certificateTemplatesEnabled: true,
-    maxLoginAttempts: 5,
-    sessionTimeoutMinutes: 120
-  },
-  categories: []
-};
-
-let announcementsTableEnsured = false;
-let platformSettingsTableEnsured = false;
-
-async function ensureAnnouncementsTable() {
-  if (announcementsTableEnsured) {
-    return;
-  }
-
-  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
-    announcementsTableEnsured = true;
-    return;
-  }
-
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS announcements (
-      id INT PRIMARY KEY AUTO_INCREMENT,
-      title VARCHAR(200) NOT NULL,
-      message TEXT NOT NULL,
-      target ENUM('organizers', 'attendees', 'all') DEFAULT 'all',
-      created_by INT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  announcementsTableEnsured = true;
-}
-
-async function ensurePlatformSettingsTable() {
-  if (platformSettingsTableEnsured) {
-    return;
-  }
-
-  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
-    platformSettingsTableEnsured = true;
-    return;
-  }
-
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS platform_settings (
-      id INT PRIMARY KEY AUTO_INCREMENT,
-      setting_key VARCHAR(150) NOT NULL UNIQUE,
-      setting_value TEXT NOT NULL,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-  `);
-
-  platformSettingsTableEnsured = true;
-}
-
-function getCredentialsTable(role) {
-  if (!VALID_ROLES.has(role)) {
-    return null;
-  }
-
-  return CREDENTIAL_TABLE_BY_ROLE[role];
-}
-
-function sanitizeUsernameBase(value) {
-  const base = String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .slice(0, 12);
-
-  return base || 'user';
-}
-
-function generateSecurePassword(length = 10) {
-  // URL-safe characters; remove ambiguous symbols for easier sharing.
-  return crypto
-    .randomBytes(Math.ceil(length * 0.8))
-    .toString('base64')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .slice(0, length);
-}
-
-async function generateUniqueUsername(connection, preferredBase) {
-  const base = sanitizeUsernameBase(preferredBase);
-  let candidate = base;
-  let attempt = 0;
-
-  while (attempt < 50) {
-    const [rows] = await connection.query(
-      'SELECT id FROM users WHERE username = ? LIMIT 1',
-      [candidate]
-    );
-
-    if (rows.length === 0) {
-      return candidate;
-    }
-
-    attempt += 1;
-    candidate = `${base}${Math.floor(100 + Math.random() * 900)}`;
-  }
-
-  // Last resort: deterministic + timestamp suffix
-  return `${base}${Date.now().toString().slice(-4)}`;
-}
-
-// Get admin dashboard statistics
-exports.getDashboardStats = async (req, res) => {
+exports.getDashboard = async (_req, res) => {
   try {
-    // Total users
-    const [totalUsers] = await db.query('SELECT COUNT(*) as count FROM users');
-    
-    // Users by role
-    const [usersByRole] = await db.query(`
-      SELECT role, COUNT(*) as count 
-      FROM users 
-      GROUP BY role
-    `);
-    
-    // Total events
-    const [totalEvents] = await db.query('SELECT COUNT(*) as count FROM events');
-    
-    // Events by status
-    const [eventsByStatus] = await db.query(`
-      SELECT status, COUNT(*) as count 
-      FROM events 
-      GROUP BY status
-    `);
-    
-    // Total registrations
-    const [totalRegistrations] = await db.query('SELECT COUNT(*) as count FROM registrations');
-    
-    // Total attendance
-    const [totalAttendance] = await db.query('SELECT COUNT(*) as count FROM attendance');
-    
-    // Total feedback
-    const [totalFeedback] = await db.query('SELECT COUNT(*) as count FROM feedback');
-    
-    // Average rating across all events
-    const [avgRating] = await db.query('SELECT AVG(avg_rating) as rating FROM events WHERE avg_rating > 0');
-    
-    // Recent activities (last 10)
-    const [recentActivities] = await db.query(`
-      SELECT 
-        el.action,
-        el.timestamp,
-        u.name as user_name,
-        e.title as event_name
-      FROM engagement_logs el
-      JOIN users u ON el.user_id = u.id
-      LEFT JOIN events e ON el.event_id = e.id
-      ORDER BY el.timestamp DESC
-      LIMIT 10
-    `);
-    
-    // Revenue estimate (assuming $50 per registration)
-    const totalRevenue = totalRegistrations[0].count * 50;
-    
-    // Growth metrics (last 30 days)
-    const [newUsersLast30Days] = await db.query(`
-      SELECT COUNT(*) as count 
-      FROM users 
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-    `);
-    
-    const [newEventsLast30Days] = await db.query(`
-      SELECT COUNT(*) as count 
-      FROM events 
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-    `);
+    const [users, events, registrations, attendance, feedback] = await Promise.all([
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('events').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('registrations').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('attendance').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('feedback').select('rating')
+    ]);
 
-    res.json({
+    const ratings = feedback.data || [];
+    const avgRating = ratings.length
+      ? ratings.reduce((sum, row) => sum + Number(row.rating || 0), 0) / ratings.length
+      : 0;
+
+    return res.json({
       success: true,
       stats: {
         overview: {
-          totalUsers: totalUsers[0].count,
-          totalEvents: totalEvents[0].count,
-          totalRegistrations: totalRegistrations[0].count,
-          totalAttendance: totalAttendance[0].count,
-          totalFeedback: totalFeedback[0].count,
-          avgRating: parseFloat(avgRating[0].rating || 0).toFixed(2),
-          totalRevenue: `$${totalRevenue}`
-        },
-        usersByRole,
-        eventsByStatus,
-        growth: {
-          newUsersLast30Days: newUsersLast30Days[0].count,
-          newEventsLast30Days: newEventsLast30Days[0].count
-        },
-        recentActivities
-      }
-    });
-  } catch (error) {
-    if (isDatabaseUnavailableError(error)) {
-      console.warn('Get dashboard stats warning: database unavailable, returning fallback stats.');
-      return res.json({
-        success: true,
-        stats: {
-          overview: {
-            totalUsers: 0,
-            totalEvents: 0,
-            totalRegistrations: 0,
-            totalAttendance: 0,
-            totalFeedback: 0,
-            avgRating: '0.00',
-            totalRevenue: '$0'
-          },
-          usersByRole: [],
-          eventsByStatus: [],
-          growth: {
-            newUsersLast30Days: 0,
-            newEventsLast30Days: 0
-          },
-          recentActivities: []
+          totalUsers: users.count || 0,
+          totalEvents: events.count || 0,
+          totalRegistrations: registrations.count || 0,
+          totalAttendance: attendance.count || 0,
+          averageRating: Number(avgRating.toFixed(2))
         }
-      });
-    }
-
-    console.error('Get dashboard stats error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get dashboard statistics' 
-    });
-  }
-};
-
-// Get all users
-exports.getAllUsers = async (req, res) => {
-  try {
-    const { role, search, limit = 50, offset = 0 } = req.query;
-    
-    let query = 'SELECT id, name, email, role, created_at FROM users WHERE 1=1';
-    const params = [];
-    
-    if (role) {
-      query += ' AND role = ?';
-      params.push(role);
-    }
-    
-    if (search) {
-      query += ' AND (name LIKE ? OR email LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
-    
-    const [users] = await db.query(query, params);
-    
-    // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
-    const countParams = [];
-    
-    if (role) {
-      countQuery += ' AND role = ?';
-      countParams.push(role);
-    }
-    
-    if (search) {
-      countQuery += ' AND (name LIKE ? OR email LIKE ?)';
-      countParams.push(`%${search}%`, `%${search}%`);
-    }
-    
-    const [total] = await db.query(countQuery, countParams);
-
-    res.json({
-      success: true,
-      users,
-      total: total[0].total,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
-    });
-  } catch (error) {
-    console.error('Get all users error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get users' 
-    });
-  }
-};
-
-// Search users by keyword (name/email) with optional role filter
-exports.searchUsers = async (req, res) => {
-  try {
-    const { q = '', role, limit = 50, offset = 0 } = req.query;
-    const keyword = String(q).trim();
-
-    let query = 'SELECT id, name, email, role, created_at FROM users WHERE 1=1';
-    const params = [];
-
-    if (keyword) {
-      query += ' AND (name LIKE ? OR email LIKE ?)';
-      params.push(`%${keyword}%`, `%${keyword}%`);
-    }
-
-    if (role) {
-      query += ' AND role = ?';
-      params.push(role);
-    }
-
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit, 10), parseInt(offset, 10));
-
-    const [users] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      users,
-      query: keyword,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10)
-    });
-  } catch (error) {
-    console.error('Search users error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to search users'
-    });
-  }
-};
-
-// Create user with role-based credentials
-exports.createUser = async (req, res) => {
-  const { name, email, password, role, username } = req.body;
-  const safeRole = role || 'attendee';
-  const providedPassword = String(password || '').trim();
-  const generatedPassword = generateSecurePassword();
-  const finalPassword = providedPassword || generatedPassword;
-  const passwordWasAutoGenerated = !providedPassword;
-
-  if (!name || !email) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide name and email'
-    });
-  }
-
-  const credentialsTable = getCredentialsTable(safeRole);
-  if (!credentialsTable) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid role'
-    });
-  }
-
-  let connection;
-
-  try {
-    connection = await db.getConnection();
-    await connection.beginTransaction();
-
-    const [existingUser] = await connection.query(
-      'SELECT id FROM users WHERE email = ? LIMIT 1',
-      [email]
-    );
-
-    if (existingUser.length > 0) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Email already registered'
-      });
-    }
-
-    const finalUsername = await generateUniqueUsername(
-      connection,
-      username || name || email.split('@')[0]
-    );
-
-    const hashedPassword = await bcrypt.hash(finalPassword, 10);
-
-    const [result] = await connection.query(
-      'INSERT INTO users (name, username, email, role) VALUES (?, ?, ?, ?)',
-      [name, finalUsername, email, safeRole]
-    );
-
-    await connection.query(
-      `INSERT INTO ${credentialsTable} (user_id, password_hash) VALUES (?, ?)`,
-      [result.insertId, hashedPassword]
-    );
-
-    await connection.commit();
-
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: {
-        id: result.insertId,
-        name,
-        username: finalUsername,
-        email,
-        role: safeRole
-      },
-      credentials: {
-        username: finalUsername,
-        password: finalPassword,
-        autoGeneratedPassword: passwordWasAutoGenerated
       }
     });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
-    console.error('Create user error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create user'
-    });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+    return res.status(500).json({ success: false, message: error.message || 'Failed to load dashboard.' });
   }
 };
 
-// Update user (role change, ban, etc.)
+exports.getUsers = async (req, res) => {
+  try {
+    const search = String(req.query.search || '').trim();
+    const role = String(req.query.role || '').trim();
+
+    let query = supabaseAdmin
+      .from('users')
+      .select('id, supabase_uid, name, username, email, role, organizer_status, created_at')
+      .order('created_at', { ascending: false });
+
+    if (role) query = query.eq('role', role);
+    if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return res.json({ success: true, users: data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to load users.' });
+  }
+};
+
+exports.createUser = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const passwordHash = await bcrypt.hash(String(payload.password || 'password123'), 10);
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .insert({
+        name: payload.name || payload.username || 'User',
+        username: payload.username || String(payload.email || '').split('@')[0],
+        email: payload.email,
+        role: payload.role || 'attendee',
+        organizer_status: payload.organizer_status || 'active',
+        password_hash: passwordHash
+      })
+      .select('id, name, username, email, role, organizer_status, created_at')
+      .single();
+
+    if (error) throw error;
+    return res.status(201).json({ success: true, user: data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create user.' });
+  }
+};
+
 exports.updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { role, name, email, is_active } = req.body;
-    
-    const updates = [];
-    const params = [];
-    
-    if (role) {
-      updates.push('role = ?');
-      params.push(role);
-    }
-    
-    if (name) {
-      updates.push('name = ?');
-      params.push(name);
-    }
-    
-    if (email) {
-      updates.push('email = ?');
-      params.push(email);
-    }
+    const userId = Number(req.params.userId);
+    const updates = { ...req.body };
+    delete updates.id;
+    delete updates.supabase_uid;
 
-    if (typeof is_active !== 'undefined') {
-      updates.push('is_active = ?');
-      params.push(Boolean(is_active));
-    }
-    
-    if (updates.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No updates provided' 
-      });
-    }
-    
-    params.push(id);
-    
-    await db.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-      params
-    );
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
+      .select('id, name, username, email, role, organizer_status, created_at')
+      .single();
 
-    res.json({
-      success: true,
-      message: 'User updated successfully'
-    });
+    if (error) throw error;
+    return res.json({ success: true, user: data });
   } catch (error) {
-    console.error('Update user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update user' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update user.' });
   }
 };
 
-// Get organizers with verification status
-exports.getOrganizers = async (req, res) => {
-  try {
-    const { status, search, limit = 50, offset = 0 } = req.query;
-
-    let query = `
-      SELECT
-        u.id,
-        u.name,
-        u.email,
-        u.is_active,
-        u.created_at,
-        COALESCE(op.organization_name, '') AS organization_name,
-        COALESCE(op.verification_status, 'pending') AS verification_status
-      FROM users u
-      LEFT JOIN organizer_profiles op ON op.user_id = u.id
-      WHERE u.role = 'organizer'
-    `;
-    const params = [];
-
-    if (status) {
-      query += ' AND COALESCE(op.verification_status, \'pending\') = ?';
-      params.push(status);
-    }
-
-    if (search) {
-      query += ' AND (u.name LIKE ? OR u.email LIKE ? OR COALESCE(op.organization_name, \'\') LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-    }
-
-    query += ' ORDER BY u.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit, 10), parseInt(offset, 10));
-
-    const [organizers] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      organizers,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10)
-    });
-  } catch (error) {
-    console.error('Get organizers error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get organizers'
-    });
-  }
-};
-
-// Approve or reject organizer
-exports.updateOrganizerStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const allowed = new Set(['pending', 'verified', 'rejected']);
-
-    if (!allowed.has(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status'
-      });
-    }
-
-    await db.query(
-      `
-      INSERT INTO organizer_profiles (user_id, verification_status)
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE verification_status = VALUES(verification_status)
-      `,
-      [id, status]
-    );
-
-    if (status === 'rejected') {
-      await db.query('UPDATE users SET is_active = FALSE WHERE id = ? AND role = \'organizer\'', [id]);
-    }
-
-    if (status === 'verified') {
-      await db.query('UPDATE users SET is_active = TRUE WHERE id = ? AND role = \'organizer\'', [id]);
-    }
-
-    res.json({
-      success: true,
-      message: 'Organizer status updated'
-    });
-  } catch (error) {
-    console.error('Update organizer status error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update organizer status'
-    });
-  }
-};
-
-// Delete user
 exports.deleteUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    await db.query('DELETE FROM users WHERE id = ?', [id]);
-
-    res.json({
-      success: true,
-      message: 'User deleted successfully'
-    });
+    const userId = Number(req.params.userId);
+    const { error } = await supabaseAdmin.from('users').delete().eq('id', userId);
+    if (error) throw error;
+    return res.json({ success: true, message: 'User deleted.' });
   } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to delete user' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete user.' });
   }
 };
 
-// Get all events (with advanced filters)
-exports.getAllEvents = async (req, res) => {
+exports.getOrganizers = async (_req, res) => {
   try {
-    const { status, organizer, search, limit = 50, offset = 0 } = req.query;
-    
-    let query = `
-      SELECT e.*, u.name as organizer_name, u.email as organizer_email
-      FROM events e
-      JOIN users u ON e.organizer_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-    
-    if (status) {
-      query += ' AND e.status = ?';
-      params.push(status);
-    }
-    
-    if (organizer) {
-      query += ' AND e.organizer_id = ?';
-      params.push(organizer);
-    }
-    
-    if (search) {
-      query += ' AND (e.title LIKE ? OR e.description LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
-    }
-    
-    query += ' ORDER BY e.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
-    
-    const [events] = await db.query(query, params);
-    
-    res.json({
-      success: true,
-      events
-    });
-  } catch (error) {
-    if (isDatabaseUnavailableError(error)) {
-      console.warn('Get all events warning: database unavailable, returning empty events list.');
-      return res.json({
-        success: true,
-        events: []
-      });
-    }
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select('id, name, username, email, role, organizer_status, created_at')
+      .eq('role', 'organizer')
+      .order('created_at', { ascending: false });
 
-    console.error('Get all events error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get events' 
-    });
+    if (error) throw error;
+    return res.json({ success: true, organizers: data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to load organizers.' });
   }
 };
 
-// Search events by keyword (title/description) with optional status and organizer filters
-exports.searchEvents = async (req, res) => {
+exports.updateOrganizerStatus = async (req, res) => {
   try {
-    const { q = '', status, organizer, limit = 50, offset = 0 } = req.query;
-    const keyword = String(q).trim();
+    const organizerId = Number(req.params.organizerId);
+    const status = req.body?.status || 'active';
 
-    let query = `
-      SELECT e.*, u.name as organizer_name, u.email as organizer_email
-      FROM events e
-      JOIN users u ON e.organizer_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update({ organizer_status: status })
+      .eq('id', organizerId)
+      .eq('role', 'organizer')
+      .select('id, name, organizer_status')
+      .single();
 
-    if (keyword) {
-      query += ' AND (e.title LIKE ? OR e.description LIKE ?)';
-      params.push(`%${keyword}%`, `%${keyword}%`);
-    }
-
-    if (status) {
-      query += ' AND e.status = ?';
-      params.push(status);
-    }
-
-    if (organizer) {
-      query += ' AND e.organizer_id = ?';
-      params.push(organizer);
-    }
-
-    query += ' ORDER BY e.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit, 10), parseInt(offset, 10));
-
-    const [events] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      events,
-      query: keyword,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10)
-    });
+    if (error) throw error;
+    return res.json({ success: true, organizer: data });
   } catch (error) {
-    console.error('Search events error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to search events'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update organizer status.' });
   }
 };
 
-// Create event from admin portal
+exports.getEvents = async (_req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    return res.json({ success: true, events: data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to load events.' });
+  }
+};
+
 exports.createEvent = async (req, res) => {
   try {
-    const {
-      organizer_id,
-      title,
-      description,
-      date,
-      time,
-      location,
-      status,
-      capacity,
-      category
-    } = req.body;
+    const payload = req.body || {};
+    const row = {
+      organizer_id: toInt(payload.organizer_id, null),
+      title: payload.title,
+      description: payload.description || '',
+      date: payload.date,
+      time: payload.time || '',
+      location: payload.location || '',
+      capacity: toInt(payload.capacity, 0),
+      category: payload.category || null,
+      venue_type: payload.venue_type || null,
+      status: payload.status || 'Upcoming',
+      approved: Boolean(payload.approved || false)
+    };
 
-    const normalizedTitle = String(title || '').trim();
-    const normalizedDate = String(date || '').trim();
-    const normalizedCategory = String(category || '').trim();
-    const organizerId = Number(organizer_id);
-    const normalizedStatus = EVENT_STATUSES.has(String(status || '').trim())
-      ? String(status).trim()
-      : 'Planning';
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .insert(row)
+      .select('*')
+      .single();
 
-    if (!organizerId || !normalizedTitle || !normalizedDate || !normalizedCategory) {
-      return res.status(400).json({
-        success: false,
-        message: 'Organizer, title, date, and category are required'
-      });
-    }
-
-    const [organizerRows] = await db.query(
-      'SELECT id, role FROM users WHERE id = ? LIMIT 1',
-      [organizerId]
-    );
-
-    if (organizerRows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Organizer account not found'
-      });
-    }
-
-    const ownerRole = String(organizerRows[0].role || '').toLowerCase();
-    if (!['organizer', 'admin'].includes(ownerRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Selected user cannot own an event'
-      });
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO events
-      (organizer_id, title, description, date, time, location, status, capacity, category)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        organizerId,
-        normalizedTitle,
-        String(description || '').trim(),
-        normalizedDate,
-        String(time || '').trim(),
-        String(location || '').trim(),
-        normalizedStatus,
-        Number(capacity || 0),
-        normalizedCategory
-      ]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Event created successfully',
-      eventId: result.insertId
-    });
+    if (error) throw error;
+    return res.status(201).json({ success: true, event: data });
   } catch (error) {
-    console.error('Admin create event error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create event'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create event.' });
   }
 };
 
-// Approve event
-exports.approveEvent = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    await db.query(
-      'UPDATE events SET status = ? WHERE id = ?',
-      ['Upcoming', id]
-    );
-
-    res.json({
-      success: true,
-      message: 'Event approved successfully'
-    });
-  } catch (error) {
-    console.error('Approve event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to approve event' 
-    });
-  }
-};
-
-// Update event from admin portal
 exports.updateEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const allowedFields = ['title', 'description', 'date', 'time', 'location', 'status', 'capacity', 'category'];
-    const updates = [];
-    const values = [];
+    const eventId = Number(req.params.eventId);
+    const updates = { ...req.body };
 
-    allowedFields.forEach((field) => {
-      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-        updates.push(`${field} = ?`);
-        values.push(req.body[field]);
-      }
-    });
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .update(updates)
+      .eq('id', eventId)
+      .select('*')
+      .single();
 
-    if (updates.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No valid event fields provided'
-      });
-    }
-
-    values.push(id);
-    await db.query(`UPDATE events SET ${updates.join(', ')} WHERE id = ?`, values);
-
-    res.json({
-      success: true,
-      message: 'Event updated successfully'
-    });
+    if (error) throw error;
+    return res.json({ success: true, event: data });
   } catch (error) {
-    console.error('Admin update event error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update event'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update event.' });
   }
 };
 
-// Delete event
 exports.deleteEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    await db.query('DELETE FROM events WHERE id = ?', [id]);
-
-    res.json({
-      success: true,
-      message: 'Event deleted successfully'
-    });
+    const eventId = Number(req.params.eventId);
+    const { error } = await supabaseAdmin.from('events').delete().eq('id', eventId);
+    if (error) throw error;
+    return res.json({ success: true, message: 'Event deleted.' });
   } catch (error) {
-    console.error('Delete event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to delete event' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete event.' });
   }
 };
 
-// Get registrations (optionally filtered by event)
-exports.getRegistrations = async (req, res) => {
+exports.approveEvent = async (req, res) => {
   try {
-    const { eventId, search, limit = 100, offset = 0 } = req.query;
+    const eventId = Number(req.params.eventId);
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .update({ approved: true, status: 'Upcoming' })
+      .eq('id', eventId)
+      .select('*')
+      .single();
 
-    let query = `
-      SELECT
-        r.id,
-        r.event_id,
-        e.title AS event_title,
-        r.user_id,
-        u.name AS attendee_name,
-        u.email AS attendee_email,
-        r.ticket_type,
-        r.payment_status,
-        r.registration_date
-      FROM registrations r
-      JOIN events e ON e.id = r.event_id
-      JOIN users u ON u.id = r.user_id
-      WHERE 1 = 1
-    `;
-    const params = [];
-
-    if (eventId) {
-      query += ' AND r.event_id = ?';
-      params.push(eventId);
-    }
-
-    if (search) {
-      query += ' AND (u.name LIKE ? OR u.email LIKE ? OR e.title LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-    }
-
-    query += ' ORDER BY r.registration_date DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit, 10), parseInt(offset, 10));
-
-    const [registrations] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      registrations,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10)
-    });
+    if (error) throw error;
+    return res.json({ success: true, event: data });
   } catch (error) {
-    if (isDatabaseUnavailableError(error)) {
-      console.warn('Get registrations warning: database unavailable, returning empty registrations list.');
-      return res.json({
-        success: true,
-        registrations: [],
-        limit: parseInt(req.query.limit || 100, 10),
-        offset: parseInt(req.query.offset || 0, 10)
-      });
-    }
-
-    console.error('Get registrations error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get registrations'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to approve event.' });
   }
 };
 
-// Export registrations CSV
-exports.exportRegistrations = async (req, res) => {
+exports.getSystemAnalytics = async (_req, res) => {
   try {
-    const { eventId } = req.query;
+    const [events, feedback] = await Promise.all([
+      supabaseAdmin.from('events').select('id, category, status, created_at'),
+      supabaseAdmin.from('feedback').select('rating, created_at')
+    ]);
 
-    let query = `
-      SELECT
-        r.id,
-        e.title AS event_title,
-        u.name AS attendee_name,
-        u.email AS attendee_email,
-        r.ticket_type,
-        r.payment_status,
-        r.registration_date
-      FROM registrations r
-      JOIN events e ON e.id = r.event_id
-      JOIN users u ON u.id = r.user_id
-      WHERE 1 = 1
-    `;
-    const params = [];
+    const ratings = feedback.data || [];
+    const avgRating = ratings.length
+      ? ratings.reduce((sum, row) => sum + Number(row.rating || 0), 0) / ratings.length
+      : 0;
 
-    if (eventId) {
-      query += ' AND r.event_id = ?';
-      params.push(eventId);
-    }
-
-    query += ' ORDER BY r.registration_date DESC';
-    const [rows] = await db.query(query, params);
-
-    const header = 'registration_id,event_title,attendee_name,attendee_email,ticket_type,payment_status,registration_date';
-    const csvRows = rows.map((row) => [
-      row.id,
-      `"${String(row.event_title || '').replace(/"/g, '""')}"`,
-      `"${String(row.attendee_name || '').replace(/"/g, '""')}"`,
-      `"${String(row.attendee_email || '').replace(/"/g, '""')}"`,
-      `"${String(row.ticket_type || '').replace(/"/g, '""')}"`,
-      `"${String(row.payment_status || '').replace(/"/g, '""')}"`,
-      `"${new Date(row.registration_date).toISOString()}"`
-    ].join(','));
-
-    const csv = [header].concat(csvRows).join('\n');
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="registrations-${eventId || 'all'}.csv"`);
-    res.status(200).send(csv);
-  } catch (error) {
-    console.error('Export registrations error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to export registrations'
-    });
-  }
-};
-
-// Get system-wide analytics
-exports.getSystemAnalytics = async (req, res) => {
-  try {
-    // Event performance over time
-    const [eventTrends] = await db.query(`
-      SELECT 
-        DATE_FORMAT(date, '%Y-%m') as month,
-        COUNT(*) as event_count,
-        SUM(registered) as total_registrations,
-        AVG(engagement) as avg_engagement,
-        AVG(avg_rating) as avg_rating
-      FROM events
-      WHERE date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-      GROUP BY month
-      ORDER BY month
-    `);
-    
-    // Top performing events
-    const [topEvents] = await db.query(`
-      SELECT 
-        id, title, registered, engagement, avg_rating, feedback_count
-      FROM events
-      ORDER BY (engagement + avg_rating * 20) DESC
-      LIMIT 10
-    `);
-    
-    // Most active organizers
-    const [topOrganizers] = await db.query(`
-      SELECT 
-        u.id, u.name, u.email,
-        COUNT(e.id) as event_count,
-        SUM(e.registered) as total_attendees,
-        AVG(e.avg_rating) as avg_rating
-      FROM users u
-      JOIN events e ON u.id = e.organizer_id
-      WHERE u.role = 'organizer'
-      GROUP BY u.id
-      ORDER BY event_count DESC
-      LIMIT 10
-    `);
-    
-    // Category distribution
-    const [categoryStats] = await db.query(`
-      SELECT 
-        category,
-        COUNT(*) as count,
-        SUM(registered) as total_attendees
-      FROM events
-      GROUP BY category
-      ORDER BY count DESC
-    `);
-
-    res.json({
+    return res.json({
       success: true,
       analytics: {
-        eventTrends,
-        topEvents,
-        topOrganizers,
-        categoryStats
+        eventCount: (events.data || []).length,
+        feedbackCount: ratings.length,
+        averageRating: Number(avgRating.toFixed(2))
       }
     });
   } catch (error) {
-    console.error('Get system analytics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get system analytics' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch analytics.' });
   }
 };
 
-// Generate reports
-exports.generateReports = async (req, res) => {
+exports.getRegistrations = async (_req, res) => {
   try {
-    const { type, startDate, endDate } = req.query;
-    
-    let report = {};
-    
-    if (type === 'user-activity') {
-      const [userActivity] = await db.query(`
-        SELECT 
-          u.id, u.name, u.email, u.role,
-          COUNT(DISTINCT r.id) as registrations,
-          COUNT(DISTINCT a.id) as attendance,
-          COUNT(DISTINCT f.id) as feedback_given
-        FROM users u
-        LEFT JOIN registrations r ON u.id = r.user_id
-        LEFT JOIN attendance a ON u.id = a.user_id
-        LEFT JOIN feedback f ON u.id = f.user_id
-        WHERE u.created_at BETWEEN ? AND ?
-        GROUP BY u.id
-        ORDER BY registrations DESC
-      `, [startDate || '2020-01-01', endDate || '2030-12-31']);
-      
-      report = { type: 'user-activity', data: userActivity };
-    } 
-    else if (type === 'event-performance') {
-      const [eventPerformance] = await db.query(`
-        SELECT 
-          e.id, e.title, e.date, e.status,
-          e.capacity, e.registered, e.checked_in,
-          e.engagement, e.avg_rating, e.feedback_count,
-          u.name as organizer
-        FROM events e
-        JOIN users u ON e.organizer_id = u.id
-        WHERE e.date BETWEEN ? AND ?
-        ORDER BY e.date DESC
-      `, [startDate || '2020-01-01', endDate || '2030-12-31']);
-      
-      report = { type: 'event-performance', data: eventPerformance };
-    }
-    else if (type === 'revenue') {
-      const [revenueData] = await db.query(`
-        SELECT 
-          DATE_FORMAT(r.registration_date, '%Y-%m') as month,
-          COUNT(*) as registrations,
-          COUNT(*) * 50 as estimated_revenue
-        FROM registrations r
-        WHERE r.registration_date BETWEEN ? AND ?
-        GROUP BY month
-        ORDER BY month
-      `, [startDate || '2020-01-01', endDate || '2030-12-31']);
-      
-      report = { type: 'revenue', data: revenueData };
-    }
+    const { data, error } = await supabaseAdmin
+      .from('registrations')
+      .select('*, users(name, email), events(title, date)')
+      .order('created_at', { ascending: false });
 
-    res.json({
+    if (error) throw error;
+    return res.json({ success: true, registrations: data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch registrations.' });
+  }
+};
+
+exports.exportRegistrations = async (_req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('registrations')
+      .select('id, event_id, user_id, ticket_type, qr_code, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const rows = data || [];
+    const header = ['id', 'event_id', 'user_id', 'ticket_type', 'qr_code', 'created_at'];
+    const csv = [header.join(',')]
+      .concat(rows.map((row) => header.map((k) => `"${String(row[k] ?? '').replace(/"/g, '""')}"`).join(',')))
+      .join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    return res.status(200).send(csv);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to export registrations.' });
+  }
+};
+
+exports.generateReport = async (req, res) => {
+  try {
+    const type = String(req.query.type || 'summary');
+    const startDate = req.query.startDate || null;
+    const endDate = req.query.endDate || null;
+
+    return res.json({
       success: true,
-      report
+      report: {
+        type,
+        startDate,
+        endDate,
+        generatedAt: new Date().toISOString()
+      }
     });
   } catch (error) {
-    console.error('Generate reports error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to generate report' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to generate report.' });
   }
 };
 
-// Create announcement
 exports.createAnnouncement = async (req, res) => {
   try {
-    const { title, message, target = 'all', created_by = null } = req.body;
+    const payload = req.body || {};
+    const { data, error } = await supabaseAdmin
+      .from('announcements')
+      .insert({
+        title: payload.title || 'Announcement',
+        message: payload.message || '',
+        audience: payload.audience || 'all',
+        created_by: payload.created_by ? Number(payload.created_by) : null
+      })
+      .select('*')
+      .single();
 
-    if (!title || !message) {
-      return res.status(400).json({
-        success: false,
-        message: 'Title and message are required'
-      });
-    }
-
-    await ensureAnnouncementsTable();
-
-    await db.query(
-      'INSERT INTO announcements (title, message, target, created_by) VALUES (?, ?, ?, ?)',
-      [title, message, target, created_by]
-    );
-
-    res.json({
-      success: true,
-      message: 'Announcement created successfully'
-    });
+    if (error) throw error;
+    return res.status(201).json({ success: true, announcement: data });
   } catch (error) {
-    console.error('Create announcement error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create announcement' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create announcement.' });
   }
 };
 
-// Get attendee feedback and complaints
-exports.getFeedback = async (req, res) => {
+exports.getFeedback = async (_req, res) => {
   try {
-    const { search, limit = 100, offset = 0 } = req.query;
+    const { data, error } = await supabaseAdmin
+      .from('feedback')
+      .select('*, users(name, email), events(title)')
+      .order('created_at', { ascending: false });
 
-    let query = `
-      SELECT
-        f.id,
-        f.rating,
-        f.comment,
-        f.improvement_suggestions,
-        f.submitted_at,
-        u.name AS attendee_name,
-        u.email AS attendee_email,
-        e.title AS event_title
-      FROM feedback f
-      JOIN users u ON u.id = f.user_id
-      JOIN events e ON e.id = f.event_id
-      WHERE 1 = 1
-    `;
-    const params = [];
-
-    if (search) {
-      query += ' AND (u.name LIKE ? OR u.email LIKE ? OR e.title LIKE ? OR f.comment LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
-    }
-
-    query += ' ORDER BY f.submitted_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit, 10), parseInt(offset, 10));
-
-    const [feedback] = await db.query(query, params);
-
-    res.json({
-      success: true,
-      feedback,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10)
-    });
+    if (error) throw error;
+    return res.json({ success: true, feedback: data || [] });
   } catch (error) {
-    console.error('Get feedback error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get feedback'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch feedback.' });
   }
 };
 
-// Get admin settings
-exports.getSettings = async (req, res) => {
+exports.getSettings = async (_req, res) => {
   try {
-    await ensurePlatformSettingsTable();
+    const { data, error } = await supabaseAdmin
+      .from('admin_settings')
+      .select('*')
+      .order('id', { ascending: true });
 
-    const [categoryRows] = await db.query(`
-      SELECT category, COUNT(*) AS count
-      FROM events
-      WHERE category IS NOT NULL AND category != ''
-      GROUP BY category
-      ORDER BY count DESC
-    `);
-
-    const categories = categoryRows.map((row) => ({
-      name: row.category,
-      count: row.count
-    }));
-
-    if (adminSettingsStore.categories.length === 0) {
-      adminSettingsStore.categories = categories.map((item) => item.name);
-    }
-
-    const [settingRows] = await db.query(
-      'SELECT setting_value FROM platform_settings WHERE setting_key = ? LIMIT 1',
-      ['certificate_templates_enabled']
-    );
-
-    if (settingRows.length > 0) {
-      adminSettingsStore.security.certificateTemplatesEnabled = String(settingRows[0].setting_value) === 'true';
-    }
-
-    res.json({
-      success: true,
-      settings: {
-        platform: adminSettingsStore.platform,
-        security: adminSettingsStore.security,
-        categories: adminSettingsStore.categories,
-        categoryUsage: categories
-      }
-    });
+    if (error) throw error;
+    return res.json({ success: true, settings: data || [] });
   } catch (error) {
-    console.error('Get settings error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get settings'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch settings.' });
   }
 };
 
-// Update admin settings
 exports.updateSettings = async (req, res) => {
   try {
-    await ensurePlatformSettingsTable();
+    const payload = req.body || {};
+    const upserts = Object.keys(payload).map((key) => ({ setting_key: key, setting_value: payload[key] }));
 
-    const { platform, security, categories } = req.body;
-
-    if (platform && typeof platform === 'object') {
-      adminSettingsStore.platform = {
-        ...adminSettingsStore.platform,
-        ...platform
-      };
+    if (upserts.length === 0) {
+      return res.json({ success: true, settings: [] });
     }
 
-    if (security && typeof security === 'object') {
-      adminSettingsStore.security = {
-        ...adminSettingsStore.security,
-        ...security
-      };
+    const { data, error } = await supabaseAdmin
+      .from('admin_settings')
+      .upsert(upserts, { onConflict: 'setting_key' })
+      .select('*');
 
-      if (Object.prototype.hasOwnProperty.call(security, 'certificateTemplatesEnabled')) {
-        await db.query(
-          `
-          INSERT INTO platform_settings (setting_key, setting_value)
-          VALUES (?, ?)
-          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
-          `,
-          ['certificate_templates_enabled', String(Boolean(security.certificateTemplatesEnabled))]
-        );
-      }
-    }
-
-    if (Array.isArray(categories)) {
-      adminSettingsStore.categories = categories
-        .map((item) => String(item || '').trim())
-        .filter((item) => item.length > 0);
-    }
-
-    res.json({
-      success: true,
-      message: 'Settings updated successfully',
-      settings: adminSettingsStore
-    });
+    if (error) throw error;
+    return res.json({ success: true, settings: data || [] });
   } catch (error) {
-    console.error('Update settings error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update settings'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update settings.' });
   }
 };
 
-// Get activity logs
-exports.getActivityLogs = async (req, res) => {
+exports.getLogs = async (req, res) => {
   try {
-    const { limit = 100, offset = 0 } = req.query;
-    
-    const [logs] = await db.query(`
-      SELECT 
-        el.id,
-        el.action,
-        el.timestamp,
-        u.name as user_name,
-        u.email as user_email,
-        e.title as event_name
-      FROM engagement_logs el
-      JOIN users u ON el.user_id = u.id
-      LEFT JOIN events e ON el.event_id = e.id
-      ORDER BY el.timestamp DESC
-      LIMIT ? OFFSET ?
-    `, [parseInt(limit), parseInt(offset)]);
+    const limit = Math.min(500, Number(req.query.limit || 100));
+    const offset = Number(req.query.offset || 0);
 
-    res.json({
-      success: true,
-      logs
-    });
+    const { data, error } = await supabaseAdmin
+      .from('activity_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return res.json({ success: true, logs: data || [] });
   } catch (error) {
-    console.error('Get activity logs error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get activity logs' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch activity logs.' });
   }
 };

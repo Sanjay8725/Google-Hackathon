@@ -1,487 +1,217 @@
-const db = require('../config/database');
+const { supabaseAdmin } = require('../config/supabase');
 
-let expenseTableEnsured = false;
-
-async function ensureExpenseTable() {
-  if (expenseTableEnsured) {
-    return;
-  }
-
-  if (typeof db.isSupabase === 'function' && db.isSupabase()) {
-    expenseTableEnsured = true;
-    return;
-  }
-
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS event_expenses (
-      id INT PRIMARY KEY AUTO_INCREMENT,
-      event_id INT NOT NULL,
-      title VARCHAR(200) NOT NULL,
-      category VARCHAR(100) DEFAULT 'General',
-      amount DECIMAL(10,2) NOT NULL,
-      expense_date DATE NOT NULL,
-      payment_method VARCHAR(50) DEFAULT 'Other',
-      notes TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-      INDEX idx_event (event_id),
-      INDEX idx_expense_date (expense_date)
-    )
-  `);
-
-  expenseTableEnsured = true;
-}
-
-// Get all events
-exports.getAllEvents = async (req, res) => {
+exports.getAllEvents = async (_req, res) => {
   try {
-    const [events] = await db.query(`
-      SELECT e.*, u.name as organizer_name 
-      FROM events e 
-      JOIN users u ON e.organizer_id = u.id 
-      ORDER BY e.date DESC
-    `);
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .select('*')
+      .order('date', { ascending: true });
 
-    res.json({
-      success: true,
-      events
-    });
+    if (error) throw error;
+    return res.json({ success: true, events: data || [] });
   } catch (error) {
-    console.error('Get all events error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch events' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch events.' });
   }
 };
 
-// Get single event
 exports.getEventById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    const [events] = await db.query(`
-      SELECT e.*, u.name as organizer_name 
-      FROM events e 
-      JOIN users u ON e.organizer_id = u.id 
-      WHERE e.id = ?
-    `, [id]);
-
-    if (events.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Event not found' 
-      });
-    }
-
-    res.json({
-      success: true,
-      event: events[0]
-    });
+    if (error) return res.status(404).json({ success: false, message: 'Event not found.' });
+    return res.json({ success: true, event: data });
   } catch (error) {
-    console.error('Get event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch event' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch event.' });
   }
 };
 
-// Create new event
 exports.createEvent = async (req, res) => {
   try {
-    const { 
-      organizer_id, title, description, date, time, 
-      location, capacity, category, image_url 
-    } = req.body;
+    const payload = req.body || {};
+    const requiredFields = ['title', 'date', 'time', 'location'];
+    const missing = requiredFields.filter((f) => !payload[f]);
 
-    const normalizedCategory = String(category || '').trim();
-
-    // Validation
-    if (!organizer_id || !title || !date || !normalizedCategory) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please provide required fields including event category' 
-      });
+    if (missing.length > 0) {
+      return res.status(400).json({ success: false, message: `Missing fields: ${missing.join(', ')}` });
     }
 
-    const [organizerRows] = await db.query(
-      'SELECT id, role FROM users WHERE id = ? LIMIT 1',
-      [organizer_id]
-    );
+    const eventData = {
+      title: payload.title,
+      description: payload.description || '',
+      date: payload.date,
+      time: payload.time,
+      location: payload.location,
+      capacity: Number(payload.capacity || 0),
+      organizer_id: payload.organizer_id ? Number(payload.organizer_id) : null,
+      status: payload.status || 'Upcoming',
+      category: payload.category || null,
+      venue_type: payload.venue_type || null
+    };
 
-    if (organizerRows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Organizer account not found'
-      });
-    }
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .insert(eventData)
+      .select('*')
+      .single();
 
-    if (!['organizer', 'admin'].includes(String(organizerRows[0].role || '').toLowerCase())) {
-      return res.status(403).json({
-        success: false,
-        message: 'Only organizer or admin accounts can create events'
-      });
-    }
-
-    const [result] = await db.query(`
-      INSERT INTO events 
-      (organizer_id, title, description, date, time, location, capacity, category, image_url, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Planning')
-    `, [organizer_id, title, description, date, time, location, capacity || 0, normalizedCategory, image_url]);
-
-    res.status(201).json({
-      success: true,
-      message: 'Event created successfully',
-      event: {
-        id: result.insertId,
-        organizer_id,
-        title,
-        description,
-        date,
-        time,
-        location,
-        capacity,
-        category: normalizedCategory,
-        status: 'Planning'
-      }
-    });
+    if (error) throw error;
+    return res.status(201).json({ success: true, event: data });
   } catch (error) {
-    console.error('Create event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create event' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create event.' });
   }
 };
 
-// Update event
 exports.updateEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updates = req.body;
+    const id = Number(req.params.id);
+    const updates = req.body || {};
 
-    const fields = [];
-    const values = [];
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single();
 
-    Object.keys(updates).forEach(key => {
-      fields.push(`${key} = ?`);
-      values.push(updates[key]);
-    });
-
-    values.push(id);
-
-    await db.query(
-      `UPDATE events SET ${fields.join(', ')} WHERE id = ?`,
-      values
-    );
-
-    res.json({
-      success: true,
-      message: 'Event updated successfully'
-    });
+    if (error) return res.status(404).json({ success: false, message: 'Event not found or update failed.' });
+    return res.json({ success: true, event: data });
   } catch (error) {
-    console.error('Update event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update event' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update event.' });
   }
 };
 
-// Delete event
 exports.deleteEvent = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    const { error } = await supabaseAdmin.from('events').delete().eq('id', id);
 
-    await db.query('DELETE FROM events WHERE id = ?', [id]);
-
-    res.json({
-      success: true,
-      message: 'Event deleted successfully'
-    });
+    if (error) return res.status(404).json({ success: false, message: 'Event not found or delete failed.' });
+    return res.json({ success: true, message: 'Event deleted.' });
   } catch (error) {
-    console.error('Delete event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to delete event' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete event.' });
   }
 };
 
-// Get events by organizer
-exports.getEventsByOrganizer = async (req, res) => {
-  try {
-    const { organizerId } = req.params;
-
-    const [events] = await db.query(
-      'SELECT * FROM events WHERE organizer_id = ? ORDER BY date DESC',
-      [organizerId]
-    );
-
-    res.json({
-      success: true,
-      events
-    });
-  } catch (error) {
-    console.error('Get organizer events error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch events' 
-    });
-  }
-};
-
-// Register for event
 exports.registerForEvent = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { user_id, ticket_type } = req.body;
+    const eventId = Number(req.params.id);
+    const userId = Number(req.body?.user_id);
+    const ticketType = req.body?.ticket_type || 'General';
 
-    // Check if already registered
-    const [existing] = await db.query(
-      'SELECT id FROM registrations WHERE event_id = ? AND user_id = ?',
-      [id, user_id]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Already registered for this event' 
-      });
+    if (!eventId || !userId) {
+      return res.status(400).json({ success: false, message: 'eventId and user_id are required.' });
     }
 
-    // Generate QR code (simplified - just a unique string)
-    const qr_code = `QR-${id}-${user_id}-${Date.now()}`;
+    const { data, error } = await supabaseAdmin
+      .from('registrations')
+      .insert({
+        event_id: eventId,
+        user_id: userId,
+        ticket_type: ticketType,
+        qr_code: `EVT-${eventId}-USR-${userId}`
+      })
+      .select('*')
+      .single();
 
-    // Insert registration
-    await db.query(
-      'INSERT INTO registrations (event_id, user_id, ticket_type, qr_code) VALUES (?, ?, ?, ?)',
-      [id, user_id, ticket_type || 'General', qr_code]
-    );
-
-    // Update event registered count
-    await db.query(
-      'UPDATE events SET registered = registered + 1 WHERE id = ?',
-      [id]
-    );
-
-    res.json({
-      success: true,
-      message: 'Registration successful',
-      qr_code
-    });
+    if (error) throw error;
+    return res.status(201).json({ success: true, registration: data });
   } catch (error) {
-    console.error('Register for event error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to register for event.' });
   }
 };
 
-// Get event registrations
 exports.getEventRegistrations = async (req, res) => {
   try {
-    const { id } = req.params;
+    const eventId = Number(req.params.id);
+    const { data, error } = await supabaseAdmin
+      .from('registrations')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
 
-    const [registrations] = await db.query(`
-      SELECT r.*, u.name, u.email 
-      FROM registrations r 
-      JOIN users u ON r.user_id = u.id 
-      WHERE r.event_id = ?
-    `, [id]);
-
-    res.json({
-      success: true,
-      registrations
-    });
+    if (error) throw error;
+    return res.json({ success: true, registrations: data || [] });
   } catch (error) {
-    console.error('Get registrations error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch registrations' 
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch registrations.' });
   }
 };
 
-// Get expense tracker data for an event
+exports.getOrganizerEvents = async (req, res) => {
+  try {
+    const organizerId = Number(req.params.organizerId);
+    const { data, error } = await supabaseAdmin
+      .from('events')
+      .select('*')
+      .eq('organizer_id', organizerId)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+    return res.json({ success: true, events: data || [] });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch organizer events.' });
+  }
+};
+
 exports.getEventExpenses = async (req, res) => {
   try {
-    const { id } = req.params;
+    const eventId = Number(req.params.id);
+    const { data, error } = await supabaseAdmin
+      .from('event_expenses')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('expense_date', { ascending: false });
 
-    await ensureExpenseTable();
-
-    const [events] = await db.query(
-      'SELECT id, organizer_id, title, cost FROM events WHERE id = ?',
-      [id]
-    );
-
-    if (events.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
-    }
-
-    const [expenses] = await db.query(
-      'SELECT * FROM event_expenses WHERE event_id = ? ORDER BY expense_date DESC, id DESC',
-      [id]
-    );
-
-    const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const budget = Number(events[0].cost || 0);
-
-    res.json({
-      success: true,
-      event: events[0],
-      summary: {
-        total_expenses: Number(totalExpenses.toFixed(2)),
-        budget,
-        remaining_budget: Number((budget - totalExpenses).toFixed(2)),
-        expense_count: expenses.length
-      },
-      expenses
-    });
+    if (error) throw error;
+    const total = (data || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    return res.json({ success: true, expenses: data || [], total });
   } catch (error) {
-    console.error('Get event expenses error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch event expenses'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to fetch event expenses.' });
   }
 };
 
-// Add an expense entry for an event
 exports.addEventExpense = async (req, res) => {
   try {
-    const { id } = req.params;
-    const {
-      organizer_id,
-      title,
-      category,
-      amount,
-      expense_date,
-      payment_method,
-      notes
-    } = req.body;
+    const eventId = Number(req.params.id);
+    const payload = req.body || {};
 
-    if (!organizer_id || !title || !amount || !expense_date) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide organizer_id, title, amount and expense_date'
-      });
-    }
+    const row = {
+      event_id: eventId,
+      organizer_id: payload.organizer_id ? Number(payload.organizer_id) : null,
+      category: payload.category || 'General',
+      description: payload.description || '',
+      amount: Number(payload.amount || 0),
+      expense_date: payload.expense_date || new Date().toISOString().slice(0, 10)
+    };
 
-    await ensureExpenseTable();
+    const { data, error } = await supabaseAdmin
+      .from('event_expenses')
+      .insert(row)
+      .select('*')
+      .single();
 
-    const [events] = await db.query(
-      'SELECT id FROM events WHERE id = ? AND organizer_id = ?',
-      [id, organizer_id]
-    );
-
-    if (events.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only add expenses to your own events'
-      });
-    }
-
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Amount must be a number greater than 0'
-      });
-    }
-
-    const [result] = await db.query(
-      `INSERT INTO event_expenses
-      (event_id, title, category, amount, expense_date, payment_method, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        title,
-        category || 'General',
-        numericAmount,
-        expense_date,
-        payment_method || 'Other',
-        notes || null
-      ]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Expense added successfully',
-      expense: {
-        id: result.insertId,
-        event_id: Number(id),
-        title,
-        category: category || 'General',
-        amount: numericAmount,
-        expense_date,
-        payment_method: payment_method || 'Other',
-        notes: notes || null
-      }
-    });
+    if (error) throw error;
+    return res.status(201).json({ success: true, expense: data });
   } catch (error) {
-    console.error('Add event expense error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to add event expense'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to add expense.' });
   }
 };
 
-// Delete an expense entry for an event
 exports.deleteEventExpense = async (req, res) => {
   try {
-    const { id, expenseId } = req.params;
-    const organizerId = Number(req.body.organizer_id || req.query.organizer_id);
+    const expenseId = Number(req.params.expenseId);
+    const { error } = await supabaseAdmin
+      .from('event_expenses')
+      .delete()
+      .eq('id', expenseId);
 
-    if (!organizerId) {
-      return res.status(400).json({
-        success: false,
-        message: 'organizer_id is required'
-      });
-    }
-
-    await ensureExpenseTable();
-
-    const [events] = await db.query(
-      'SELECT id FROM events WHERE id = ? AND organizer_id = ?',
-      [id, organizerId]
-    );
-
-    if (events.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only delete expenses from your own events'
-      });
-    }
-
-    const [result] = await db.query(
-      'DELETE FROM event_expenses WHERE id = ? AND event_id = ?',
-      [expenseId, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Expense deleted successfully'
-    });
+    if (error) throw error;
+    return res.json({ success: true, message: 'Expense deleted.' });
   } catch (error) {
-    console.error('Delete event expense error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete event expense'
-    });
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete expense.' });
   }
 };

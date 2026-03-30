@@ -1,37 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
-const http = require('http');
 
-// Load environment variables
 dotenv.config();
 
-const db = require('./config/database');
+const { supabaseAdmin } = require('./config/supabase');
 
-const app = express();
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from the frontend directory and public folder
-app.use('/src', express.static(path.join(__dirname, '../../frontend/src')));
-app.use(express.static(path.join(__dirname, '../../frontend/src')));
-app.use(express.static(path.join(__dirname, '../../frontend/src/public')));
-app.use(express.static(path.join(__dirname, '../../public')));
-
-// Catch-all route to serve index.html for SPA routing
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/src/public/index.html'), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Unable to load home page' });
-    }
-  });
-});
-
-// Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
@@ -40,7 +14,23 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const attendeeRoutes = require('./routes/attendeeRoutes');
 
-// API routes
+const app = express();
+const PORT = Number(process.env.PORT || 5001);
+
+app.use(cors());
+app.use(express.json());
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    const { error } = await supabaseAdmin.from('users').select('id').limit(1);
+    if (error) throw error;
+
+    res.json({ success: true, message: 'API is running', database: 'supabase-connected' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message, database: 'supabase-disconnected' });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
@@ -49,126 +39,14 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/attendee', attendeeRoutes);
 
-// Attendee Module Pages (Server-side rendering)
-app.get('/attendee-module/schedule', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/attendee-module/schedule.html'), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Unable to load schedule page' });
-    }
-  });
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
-app.get('/attendee-module/feedback', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/attendee-module/feedback.html'), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Unable to load feedback page' });
-    }
-  });
+app.use((error, _req, res, _next) => {
+  res.status(500).json({ success: false, message: error.message || 'Internal server error' });
 });
 
-app.get('/attendee-module/certificate', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/attendee-module/certificate.html'), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Unable to load certificate page' });
-    }
-  });
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
-
-app.get('/attendee-module/qrcode', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/attendee-module/qrcode.html'), (err) => {
-    if (err) {
-      res.status(500).json({ error: 'Unable to load QR code page' });
-    }
-  });
-});
-
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  const dbState = await db.checkConnection();
-
-  res.json({
-    status: dbState.connected ? 'ok' : 'degraded',
-    message: dbState.connected ? 'Server and database are running' : 'Server is running; database is unavailable',
-    database: dbState,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 404 handler for undefined API routes
-app.use('/api', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `Endpoint not found: ${req.method} ${req.originalUrl}` 
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
-    message: 'Something went wrong!', 
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
-  });
-});
-
-const DEFAULT_PORT = Number(process.env.PORT || 3000);
-
-function isSameAppRunning(port) {
-  return new Promise((resolve) => {
-    const request = http.get(`http://localhost:${port}/api/health`, (response) => {
-      resolve(response.statusCode === 200);
-      response.resume();
-    });
-
-    request.on('error', () => {
-      resolve(false);
-    });
-
-    request.setTimeout(1200, () => {
-      request.destroy();
-      resolve(false);
-    });
-  });
-}
-
-function startServer(port, retriedOnce) {
-  const server = app.listen(port, () => {
-    console.log(`✅ Server running on port http://localhost:${port}`);
-    console.log(`✅ API available at http://localhost:${port}/api`);
-    console.log(`✅ Database: Connected with fallback support`);
-  });
-
-  server.on('error', async (error) => {
-    if (error && error.code === 'EADDRINUSE') {
-      const alreadyRunning = await isSameAppRunning(port);
-      if (alreadyRunning) {
-        console.log(`ℹ️  EventFlow backend is already running on http://localhost:${port}.`);
-        process.exit(0);
-        return;
-      }
-
-      if (!retriedOnce) {
-        const fallbackPort = port + 1;
-        console.warn(`Port ${port} is in use. Retrying on port ${fallbackPort}.`);
-        startServer(fallbackPort, true);
-        return;
-      }
-
-      console.error(`Port ${port} and fallback port are unavailable. Set a custom PORT value and retry.`);
-      process.exit(1);
-      return;
-    }
-
-    if (error && error.code === 'EACCES') {
-      console.error(`Insufficient permissions to bind to port ${port}. Try a different PORT value.`);
-      process.exit(1);
-      return;
-    }
-
-    console.error('Server startup error:', error);
-    process.exit(1);
-  });
-}
-
-startServer(DEFAULT_PORT, false);

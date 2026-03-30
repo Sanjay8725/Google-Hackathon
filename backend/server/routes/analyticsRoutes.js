@@ -1,14 +1,10 @@
 const express = require('express');
+const controller = require('../controllers/analyticsController');
+
 const router = express.Router();
-const analyticsController = require('../controllers/analyticsController');
 
-// GET /api/analytics/event/:eventId - Get comprehensive event analytics
-router.get('/event/:eventId', analyticsController.getEventAnalytics);
-
-// GET /api/analytics/dashboard/:organizerId - Get organizer dashboard stats
-router.get('/dashboard/:organizerId', analyticsController.getDashboardAnalytics);
-
-// POST /api/analytics/track - Track engagement action
-router.post('/track', analyticsController.trackEngagement);
+router.get('/event/:eventId', controller.getEventAnalytics);
+router.get('/dashboard/:organizerId', controller.getDashboardAnalytics);
+router.post('/track', controller.trackEngagement);
 
 module.exports = router;
